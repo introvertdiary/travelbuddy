@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Financial Buddy</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e3f6f3;--card:#f5fffd;--sand:#bfe6e0;--lilac:#c9f0e9;--orchid:#6fd2c4;--violet:#0c7f82;--deep:#0a4a52;--ink:#143439;--mute:#4f7679;--bad:#c62828;--ok:#2e7d4f;--in:#effdfa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b2123;--card:#10312f;--sand:#1c4a4a;--lilac:#15504e;--orchid:#2a9791;--violet:#45d6c8;--deep:#c6f6f0;--ink:#dff5f3;--mute:#8cbab8;--bad:#ff8a80;--ok:#7fd1a0;--in:#0c2a2b}}
+:root[data-theme="dark"]{--bg:#0b2123;--card:#10312f;--sand:#1c4a4a;--lilac:#15504e;--orchid:#2a9791;--violet:#45d6c8;--deep:#c6f6f0;--ink:#dff5f3;--mute:#8cbab8;--bad:#ff8a80;--ok:#7fd1a0;--in:#0c2a2b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Courier Prime",ui-monospace,monospace}
+h1,h2,h3{font-family:"Special Elite","Courier Prime",monospace;font-weight:400;margin:0;color:var(--deep)}
+header{padding:14px 20px;background:var(--card);border-bottom:1px solid var(--sand)}header h1{font-size:22px;cursor:pointer}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+section{background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 2px 12px #0c7f821a}
+section>h2{font-size:21px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:9px 11px;border:1.5px solid var(--sand);border-radius:10px;background:var(--in);color:var(--ink)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--violet);cursor:pointer}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
+button{background:var(--violet);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:700}
+:root[data-theme="dark"] button,:root:not([data-theme="light"]) button{color:#082022}
+button.ghost{background:var(--lilac);color:var(--deep)}button.x{background:none;color:var(--bad);padding:2px 8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sp{justify-content:space-between}
+.tag{background:var(--lilac);color:var(--deep);border-radius:99px;padding:3px 10px;font-size:12px}
+.tag.bad{color:var(--bad)}.tag.ok{color:var(--ok)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+.stat{background:var(--lilac);border-radius:14px;padding:10px 12px}.stat small{display:block;color:var(--mute);font-size:12px}.stat b{font-size:18px;color:var(--deep)}
+.bar{height:8px;background:var(--sand);border-radius:99px;overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--violet)}
+.debt{border:1.5px dashed var(--orchid);border-radius:14px;padding:12px;margin-bottom:12px}
+.small{font-size:12px;color:var(--mute)}.empty{color:var(--mute)}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--sand);white-space:nowrap}
+th{font-size:12px;color:var(--mute)}td.n,th.n{text-align:right}tr.paid td{color:var(--mute);text-decoration:line-through}tr.paid td:first-child{text-decoration:none}
+tr.next td{background:var(--lilac)}.od{color:var(--bad);font-weight:700}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--deep);color:var(--bg);padding:10px 16px;border-radius:12px;display:none;z-index:50}
+.gh td{background:var(--lilac);color:var(--deep);font-weight:700;border-bottom:0}
+.stk{border:1.5px dashed var(--orchid);border-radius:12px;padding:8px 12px;margin-top:12px}.stk .row{padding:3px 0}
+.stat.c{cursor:pointer}.dt{width:auto;padding:3px 6px;font-size:12px}td .nt{white-space:normal;min-width:130px;color:var(--mute);font-size:12px}
+</style></head>
+<body>
+<header><h1 onclick="home()">🧾 Financial Buddy</h1></header>
+<main id="app"></main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const r2=n=>Math.round(n*100)/100;
+const uid=()=>Math.random().toString(36).slice(2,10);
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const pd=s=>new Date(s+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",3500)}
+const ym=n=>n<=0?"none":(n>=12?Math.floor(n/12)+" yr ":"")+(n%12?n%12+" mo":"");
+const T={exp:{bal:"Balance left",done:"Paid so far",left:"Payments left",od:"Overdue payments",nx:"Next due",set:"Settled",kinds:["Bank","Credit card","Person","Other expense"],ttl:"Set Up Expense Account",list:"Your expense list",add:"Add items",dl:"Due date (first payment)",sec:"Due dates",rec:"Installment",due:"due"},
+ inc:{bal:"Left to receive",done:"Received so far",left:"Receipts left",od:"Late receipts",nx:"Next expected",set:"Received in full",kinds:["Employer","Client","Person","Other income"],ttl:"Set Up Income Account",list:"Your income list",add:"Add expected income",dl:"Expected date (first receipt)",sec:"Expected dates",rec:"Recurring monthly",due:"expected"}};
+const sd=a=>a.side==="inc"?"inc":"exp";
+let accts=[],stack=[],cur=null,showSum=false;
+try{accts=JSON.parse(localStorage.getItem("debtbuddy:v2")||"[]");if(!Array.isArray(accts))accts=[]}catch(e){accts=[]}
+function save(){try{localStorage.setItem("debtbuddy:v2",JSON.stringify(accts))}catch(e){toast("Could not save in this browser.")}}
+function addM(y,m,d,i){const t=new Date(y,m-1+i,1),l=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(Math.min(d,l)).padStart(2,"0")}
+function pays(it){const n=it.months,b=r2(it.amount/n),[y,m,d]=it.due.split("-").map(Number),po=it.paidOn||[];return Array.from({length:n},(_,i)=>({i,date:addM(y,m,d,i),amt:i===n-1?r2(it.amount-b*(n-1)):b,paid:!!it.paid[i],on:po[i]||""}))}
+function asum(a){const rows=[];let ten=0;a.items.forEach(it=>{const p=pays(it);ten=Math.max(ten,p.filter(x=>!x.paid).length);p.forEach(x=>rows.push({it,p:x}))});
+ const un=rows.filter(r=>!r.p.paid),tot=r2(rows.reduce((s,r)=>s+r.p.amt,0)),out=r2(un.reduce((s,r)=>s+r.p.amt,0)),t=today();
+ return{rows,tot,out,paidAmt:r2(tot-out),left:un.length,ten,od:un.filter(r=>r.p.date<t).length,next:un.map(r=>r.p.date).sort()[0],pct:tot?100*(tot-out)/tot:0,fin:rows.length>0&&!un.length,last:rows.filter(r=>r.p.paid&&r.p.on).map(r=>r.p.on).sort().pop()||""}}
+const card=(k,v,c)=>`<div class="stat${c?" c":""}"${c?` onclick="togSum()"`:""}><small>${k}</small><b>${v}</b></div>`;
+function home(){cur=null;stack=[];const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
+ const eo=r2(E.reduce((q,x)=>q+x.s.out,0)),io=r2(I.reduce((q,x)=>q+x.s.out,0)),net=r2(io-eo),od=E.reduce((q,x)=>q+x.s.od,0),nx=E.map(x=>x.s.next).filter(Boolean).sort()[0];
+ const sum=g=>g.length?`<div class="wrap"><table><tr><th>Account</th><th>Type</th><th class="n">Total</th><th class="n">${T[sd(g[0].a)].done.replace(" so far","")}</th><th class="n">${T[sd(g[0].a)].bal}</th><th>Next</th></tr>${g.map(({a,s})=>`<tr><td><a href="#" style="color:var(--violet)" onclick="openA('${a.id}');return false">${esc(a.name)}</a></td><td>${esc(a.kind)}</td><td class="n">${fmt(s.tot)}</td><td class="n">${fmt(s.paidAmt)}</td><td class="n">${fmt(s.out)}</td><td>${s.next?pd(s.next):"–"}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.tot,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.paidAmt,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.out,0))}</b></td><td></td></tr></table></div>`:`<p class="empty">None yet.</p>`;
+ const lst=(g,side)=>`<section><h2>${T[side].list}</h2>${g.length?g.map(({a,s})=>`<div class="debt"><div class="row sp"><div><b>${esc(a.name)}</b> <span class="tag">${esc(a.kind)}</span> ${s.od?`<span class="tag bad">${s.od} ${side==="inc"?"late":"overdue"}</span>`:""}${s.fin?`<span class="tag ok">${T[side].set}${s.last?" on "+pd(s.last):""}</span>`:""}</div>
+  <div class="row"><button class="ghost" onclick="openA('${a.id}')">Open</button><button class="x" onclick="delA('${a.id}')">Delete</button></div></div>
+  <div class="bar"><i style="width:${s.pct}%"></i></div><div class="small">${a.items.length?`${T[side].bal} <b>PHP ${fmt(s.out)}</b> · ${s.left} ${side==="inc"?"receipt":"payment"}${s.left===1?"":"s"} left${s.next?` · next ${pd(s.next)}`:""}`:"No items yet"}</div></div>`).join(""):`<p class="empty">Nothing yet. Create one above.</p>`}</section>`;
+ const setup=side=>`<section><h2>${T[side].ttl}</h2><div class="grid"><div><label>Name</label><input id="nm-${side}"></div><div><label>Type</label><select id="kd-${side}">${T[side].kinds.map(k=>`<option>${k}</option>`).join("")}</select></div></div><div style="margin-top:12px"><button onclick="addAcct('${side}')">Create</button></div></section>`;
+ $("#app").innerHTML=`<section><h2>Overview</h2><div class="stats">${card("Expenses balance left","PHP "+fmt(eo),1)}${card("Income left to receive","PHP "+fmt(io),1)}${card("Net (income minus expenses)",`<span class="${net<0?"od":""}">PHP ${fmt(net)}</span>`,1)}${card("Next due",nx?pd(nx):"–",1)}${card("Overdue payments",`<span class="${od?"od":""}">${od}</span>`,1)}</div>
+  <p class="small">Tap any card ${showSum?"to hide":"to see"} the summary per account.</p>${showSum?`<h3 style="margin:10px 0 4px">Expense accounts</h3>${sum(E)}<h3 style="margin:14px 0 4px">Income accounts</h3>${sum(I)}`:""}</section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}`}
+function togSum(){showSum=!showSum;home()}
+function addAcct(side){const n=$("#nm-"+side).value.trim();if(!n)return toast("Add a name.");const a={id:uid(),name:n,kind:$("#kd-"+side).value,side,items:[]};accts.push(a);save();openA(a.id)}
+function delA(id){if(!confirm("Delete this and all its items?"))return;accts=accts.filter(x=>x.id!==id);save();home()}
+function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();if(cur!==id)stack=[];cur=id;const s=asum(a),L=T[sd(a)];
+ $("#app").innerHTML=`<section><div class="row sp"><div><h2>${esc(a.name)}</h2><span class="tag">${esc(a.kind)}</span> ${s.fin?`<span class="tag ok">${L.set}${s.last?" on "+pd(s.last):""}</span>`:""}</div><button class="ghost" onclick="home()">All</button></div>
+  <div class="bar"><i style="width:${s.pct}%"></i></div><div class="stats" style="margin-top:10px">${card(L.bal,"PHP "+fmt(s.out))}${card(L.done,"PHP "+fmt(s.paidAmt))}${card(L.left,s.left)}${card(L.nx,s.next?pd(s.next):"–")}${card(L.od,`<span class="${s.od?"od":""}">${s.od}</span>`)}${card("Longest tenure left",ym(s.ten))}</div></section>
+ <section><h2>${L.add}</h2><p class="small">Set the date, stack as many items as fall on it, then add them all at once.</p>
+  <div class="grid"><div><label>${L.dl}</label><input id="du" type="date" value="${today()}"></div></div>
+  <div class="grid" style="margin-top:10px"><div style="grid-column:span 2"><label>Item</label><input id="ds"></div>
+  <div><label>Amount (PHP)</label><input id="am" type="number" step="any" inputmode="decimal"></div>
+  <div><label>Payment</label><select id="pk" onchange="$('#mw').style.display=this.value==='i'?'':'none'"><option value="o">One-time</option><option value="i">${L.rec}</option></select></div>
+  <div id="mw" style="display:none"><label>Months</label><input id="mo" type="number" inputmode="numeric" value="12"></div>
+  <div style="grid-column:1/-1"><label>Notes or remarks (optional)</label><input id="nt"></div></div>
+  <div style="margin-top:10px"><button class="ghost" onclick="stage()">+ Add to stack</button></div><div id="stk"></div></section>
+ <section><h2>${L.sec}</h2><p class="small">Tick a line once ${sd(a)==="inc"?"received":"paid"}. The date is set to today and can be changed.</p>${ledger(a)}</section>`;paint()}
+function stage(){const d=$("#ds").value.trim(),m=$("#pk").value==="i"?Math.round(+$("#mo").value):1,am=+$("#am").value;
+ if(!d||!(am>0)||!(m>=1&&m<=600))return toast("Add an item name, an amount and the months if it repeats.");
+ stack.push({id:uid(),desc:d,amount:am,months:m,note:$("#nt").value.trim()});$("#ds").value="";$("#am").value="";$("#nt").value="";paint();$("#ds").focus()}
+function paint(){const el=$("#stk");if(!el)return;el.innerHTML=stack.length?`<div class="stk"><b>Stack</b>${stack.map((x,i)=>`<div class="row sp"><span>${esc(x.desc)} <span class="small">${x.months>1?x.months+" months · PHP "+fmt(x.amount/x.months)+"/mo":"one-time"}${x.note?" · "+esc(x.note):""}</span></span><span>PHP ${fmt(x.amount)} <button class="x" onclick="unstage(${i})" aria-label="Remove">✕</button></span></div>`).join("")}
+ <div class="row sp" style="margin-top:6px"><b>Together on first date: PHP ${fmt(stack.reduce((s,x)=>s+x.amount/x.months,0))}</b><button onclick="commit()">Add all</button></div></div>`:""}
+function unstage(i){stack.splice(i,1);paint()}
+function commit(){if($("#ds").value.trim()&&+$("#am").value>0)stage();const du=$("#du").value,a=accts.find(x=>x.id===cur);
+ if(!du)return toast("Set the date.");if(!stack.length)return toast("Stack at least one item first.");
+ stack.forEach(x=>a.items.push({...x,due:du,paid:[],paidOn:[]}));const n=stack.length;stack=[];save();openA(cur);toast(n+" item"+(n===1?"":"s")+" added")}
+function ledger(a){const g={};asum(a).rows.forEach(r=>(g[r.p.date]=g[r.p.date]||[]).push(r));const ds=Object.keys(g).sort(),t=today();
+ if(!ds.length)return`<p class="empty">No items yet.</p>`;
+ return`<div class="wrap"><table>`+ds.map(d=>{const un=g[d].filter(r=>!r.p.paid),tt=r2(un.reduce((s,r)=>s+r.p.amt,0));
+  return`<tr class="gh"><td colspan="5">${pd(d)}${un.length&&d<t?" · overdue":""} · ${un.length?"PHP "+fmt(tt)+" "+T[sd(a)].due:"all settled"}</td></tr>`+g[d].map(r=>`<tr class="${r.p.paid?"paid":""}"><td><input type="checkbox" ${r.p.paid?"checked":""} onchange="tog('${r.it.id}',${r.p.i})" aria-label="Settled"></td><td>${esc(r.it.desc)}${r.it.note?`<div class="nt">${esc(r.it.note)}</div>`:""}</td><td class="small">${r.it.months>1?(r.p.i+1)+" of "+r.it.months:"one-time"}</td><td>${r.p.paid?`<input type="date" class="dt" value="${esc(r.p.on)}" onchange="setOn('${r.it.id}',${r.p.i},this.value)" aria-label="Settlement date">`:""}</td><td class="n">${fmt(r.p.amt)} <button class="x" onclick="delI('${r.it.id}')" aria-label="Delete item">✕</button></td></tr>`).join("")}).join("")+`</table></div>`}
+function it_(iid){const a=accts.find(x=>x.id===cur),it=a.items.find(x=>x.id===iid);it.paidOn=it.paidOn||[];return it}
+function tog(iid,i){const it=it_(iid);it.paid[i]=!it.paid[i];if(it.paid[i])it.paidOn[i]=today();else delete it.paidOn[i];save();const y=scrollY;openA(cur);scrollTo(0,y)}
+function setOn(iid,i,v){it_(iid).paidOn[i]=v;save();const y=scrollY;openA(cur);scrollTo(0,y)}
+function delI(iid){const a=accts.find(x=>x.id===cur),it=a.items.find(x=>x.id===iid);if(!confirm("Delete \""+it.desc+"\" and all its payments?"))return;a.items=a.items.filter(x=>x.id!==iid);save();openA(cur)}
+home();
+</script>
+</body></html>
