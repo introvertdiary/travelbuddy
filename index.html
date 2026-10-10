@@ -56,6 +56,7 @@ details details{margin:8px 0 0;background:#fff}
 .grid.g4.ex{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:dense}
 @media(max-width:640px){.g4 input,.g4 select{font-size:12px;padding:9px 6px;border-radius:9px}.g4 label{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lx{display:none}.g4 input[type=date]{padding-left:3px;padding-right:1px;font-size:10.5px}.crow input{width:104px}}
 @media(max-width:380px){.g4 input,.g4 select{font-size:11px;padding:8px 4px}.g4 label{font-size:9.5px}}
+.plus{background:none;color:var(--violet);border:1.5px dashed var(--orchid);padding:3px 12px;font-weight:400;font-size:13px}.plus:hover{background:var(--lilac)}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -87,7 +88,7 @@ const ph=e=>e.php!=null?e.php:e.amount*e.rate;
 const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
 const neg=n=>n<-.005?`<span class="neg">(${fmt(-n)})</span>`:fmt(Math.abs(n)<.005?0:n);
 const byCode=(a,b)=>a.code>b.code?1:-1;
-let trip=null,shellId=null,editId=null,showRc=false,last="rate",editCur=null,items=[],custVals={},payVals={},amtAuto=true,sugg=[];
+let mdlMode=null,trip=null,shellId=null,editId=null,showRc=false,last="rate",editCur=null,items=[],custVals={},payVals={},amtAuto=true,sugg=[];
 const exclWho=new Set(),exclEx=new Set(),exclPer=Object.create(null);
 function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",4000)}
 
@@ -130,10 +131,10 @@ function shares(e){const tot=ph(e),o=Object.create(null);
  if(e.alloc){for(const n in e.alloc)o[n]=e.alloc[n];return o}
  e.share.forEach(n=>o[n]=tot/e.share.length);return o}
 function payersOf(e){const o=Object.create(null);if(e.payers&&Object.keys(e.payers).length){for(const n in e.payers)o[n]=e.payers[n]}else o[e.payer]=ph(e);return o}
-function calc(list){const p=Object.create(null);trip.people.forEach(n=>p[n]={recv:0,share:0,front:0,sp:0,sr:0,paid:0,out:0});
- list.forEach(e=>{const pm=payersOf(e);for(const n in pm)if(p[n])p[n].front+=pm[n];const sh=shares(e);for(const n in sh)if(p[n])p[n].share+=sh[n]});
+function calc(list){const p=Object.create(null);trip.people.forEach(n=>p[n]={recv:0,share:0,front:0,cover:0,sp:0,sr:0,paid:0,out:0});
+ list.forEach(e=>{const pm=payersOf(e),sh=shares(e);for(const n in pm)if(p[n]){p[n].front+=pm[n];p[n].cover+=Math.min(pm[n],sh[n]||0)}for(const n in sh)if(p[n])p[n].share+=sh[n]});
  (trip.payments||[]).forEach(x=>{if(p[x.from])p[x.from].sp+=x.amount;if(p[x.to])p[x.to].sr+=x.amount});
- for(const n in p){const q=p[n];q.paid=q.front+q.sp;q.recv=Math.max(q.front-q.share,0);q.out=q.share-q.front-q.sp+q.sr}return p}
+ for(const n in p){const q=p[n];q.paid=q.sp;q.recv=Math.max(q.front-q.cover,0);q.out=q.share-q.front-q.sp+q.sr}return p}
 function settle(c){const d=[],cr=[];for(const n in c){const v=c[n].out;if(v>.005)d.push([n,v]);else if(v<-.005)cr.push([n,-v])}
  const r=[];let i=0,j=0;while(i<d.length&&j<cr.length){const m=Math.min(d[i][1],cr[j][1]);r.push([d[i][0],cr[j][0],m]);d[i][1]-=m;cr[j][1]-=m;if(d[i][1]<.005)i++;if(cr[j][1]<.005)j++}return r}
 function nextCode(){const re=new RegExp("^"+trip.cc+"(\\d+)$");const m=Math.max(0,...trip.expenses.map(e=>(re.exec(e.code)||[0,0])[1]*1));return trip.cc+String(m+1).padStart(3,"0")}
@@ -192,8 +193,10 @@ function shell(){
   <div><label>Mode<span class="lx"> of payment</span></label><select id="mode">${MODES.map(m=>`<option>${m}</option>`).join("")}</select></div>
   <div style="grid-column:span 2"><label>Booked via<span class="lx"> (optional)</span></label><input id="book" list="bk" placeholder="Platform where this transaction was booked"><datalist id="bk">${BOOKS.map(b=>`<option value="${b}">`).join("")}</datalist></div>
   ${solo?"":`<div><label>Who paid</label><select id="payer">${t.people.map(p=>`<option>${esc(p)}</option>`).join("")}</select></div>`}
-  <div style="grid-column:span 4"><label>Receipt link<span class="lx"> (optional: Google Drive, Photos, etc.)</span></label><input id="link" type="url" inputmode="url" placeholder="https://"></div>
-  <div style="grid-column:span 4"><label>Notes<span class="lx"> (optional)</span></label><input id="note"></div></div>
+</div>
+  <div class="row" style="margin-top:8px"><button class="plus" id="lkb" onclick="showF('lk')">+ Receipt link</button><button class="plus" id="ntb" onclick="showF('nt')">+ Note</button></div>
+  <div id="lkw" style="display:none;margin-top:8px"><label>Receipt link (Google Drive, Photos, etc.)</label><input id="link" type="url" inputmode="url" placeholder="https://"></div>
+  <div id="ntw" style="display:none;margin-top:8px"><label>Note</label><input id="note"></div>
   ${solo?"":`<div class="blk"><label class="ck"><input type="checkbox" id="mpt" onchange="mpToggle()">Multiple payers (optional)</label><div id="mp" class="blk" style="display:none"></div></div>
   <div class="blk"><label>Who shares</label><div class="chips" id="shc"><label class="chip"><input type="checkbox" id="shall" onchange="shAll()">All</label>${t.people.map(p=>`<label class="chip"><input type="checkbox" class="sh" value="${esc(p)}" onchange="shChange()">${esc(p)}</label>`).join("")}</div>
   <div class="row" style="margin-top:10px"><label style="margin:0">Split</label><select id="smode" onchange="splitChange()" style="width:auto"><option value="equal">Equally</option><option value="custom">Custom amounts</option><option value="items">By receipt items</option></select></div>
@@ -207,6 +210,8 @@ function shell(){
  <section><h2>Receipts</h2><div id="rc"></div><div id="slips"></div></section>`;
 }
 
+function showF(k,focus=true){$("#"+k+"w").style.display="";$("#"+k+"b").style.display="none";if(focus)$("#"+(k==="lk"?"link":"note")).focus()}
+function hideF(){["lk","nt"].forEach(k=>{$("#"+k+"w").style.display="none";$("#"+k+"b").style.display=""})}
 /* ----- amount / rate / PHP ----- */
 const curNow=()=>editCur||trip.cur;
 function curTotal(){const a=parseFloat($("#amt").value);if(!(a>0))return 0;if($("#kind").value==="php")return a;const p=parseFloat($("#php").value);return p>0?p:0}
@@ -264,14 +269,14 @@ function addExp(){
 }
 function resetForm(){editId=null;if(!$("#desc"))return;
  ["desc","amt","rate","php","book","link","note"].forEach(i=>$("#"+i).value="");
- editCur=null;last="rate";amtAuto=true;items=[];custVals={};payVals={};
+ editCur=null;last="rate";amtAuto=true;items=[];custVals={};payVals={};hideF();
  $("#kind").value=trip.cur==="PHP"?"php":"foreign";
  if(!trip.solo){$("#mpt").checked=false;mpToggle();$("#smode").value="equal";document.querySelectorAll(".sh").forEach(x=>x.checked=false);$("#shall").checked=false;splitChange()}
  kindChange();$("#code").value=nextCode();$("#ft").textContent="Add expense";$("#sv").textContent="Save expense";$("#cn").style.display="none"}
 function editExp(id){const e=trip.expenses.find(x=>x.id===id);if(!e)return;editId=id;
  $("#code").value=e.code;$("#date").value=e.date;$("#desc").value=e.desc;$("#amt").value=e.amount;editCur=e.cur==="PHP"?null:e.cur;last="rate";amtAuto=false;
  $("#kind").value=e.cur==="PHP"?"php":"foreign";$("#rate").value=e.cur==="PHP"?"":e.rate;$("#php").value=e.cur==="PHP"?"":r2(ph(e));
- $("#book").value=e.book||"";$("#link").value=e.link||"";$("#note").value=e.note||"";$("#mode").value=e.mode;items=[];custVals={};payVals={};
+ $("#book").value=e.book||"";$("#link").value=e.link||"";$("#note").value=e.note||"";hideF();if(e.link)showF("lk",false);if(e.note)showF("nt",false);$("#mode").value=e.mode;items=[];custVals={};payVals={};
  if(!trip.solo){const mp=!!(e.payers&&Object.keys(e.payers).length);$("#mpt").checked=mp;if(mp)for(const n in e.payers)payVals[n]=e.payers[n];$("#payer").value=e.payer;mpToggle();
   document.querySelectorAll(".sh").forEach(x=>x.checked=e.share.includes(x.value));$("#shall").checked=[...document.querySelectorAll(".sh")].every(x=>x.checked);
   if(e.alloc)for(const n in e.alloc)custVals[n]=r2(e.alloc[n]);if(e.items)items=e.items.map(i=>({...i,owners:[...i.owners]}));
@@ -284,6 +289,9 @@ function recordPay(i){const s=sugg[i],a=parseFloat($("#pa"+i).value);
  if(!s||!(a>0)){lists();return toast("Enter the amount that was paid.")}
  if(a>s[2]+.005){lists();return toast("That is more than the outstanding PHP "+fmt(s[2])+".")}
  (trip.payments=trip.payments||[]).push({id:uid(),from:s[0],to:s[1],amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
+function addPay(){const f=$("#pf").value,t=$("#pt").value,a=parseFloat($("#pm").value);
+ if(f===t)return toast("Pick two different travelers.");if(!(a>0))return toast("Enter the amount that was paid.");
+ (trip.payments=trip.payments||[]).push({id:uid(),from:f,to:t,amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
 function undoPay(id){trip.payments=(trip.payments||[]).filter(x=>x.id!==id);save(trip);lists()}
 
 /* ---------- lists ---------- */
@@ -296,18 +304,20 @@ function lists(){
  const c=calc(trip.expenses);
  if(solo){$("#ov").innerHTML=`<p style="margin:0"><b>Total spent: PHP ${fmt(c[P[0]].share)}</b></p>`}
  else{const T={recv:0,share:0,paid:0,out:0};P.forEach(n=>{for(const k in T)T[k]+=c[n][k]});
-  $("#ov").innerHTML=`<div class="wrap"><table><tr><th>Traveler</th><th class="n">Receivable</th><th class="n">Share</th><th class="n">Paid Amount</th><th class="n">Outstanding Balance</th></tr>${P.map(n=>`<tr><td>${esc(n)}</td><td class="n">${fmt(c[n].recv)}</td><td class="n">${fmt(c[n].share)}</td><td class="n">${fmt(c[n].paid)}</td><td class="n">${neg(c[n].out)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="n"><b>${fmt(T.recv)}</b></td><td class="n"><b>${fmt(T.share)}</b></td><td class="n"><b>${fmt(T.paid)}</b></td><td class="n"><b>${neg(T.out)}</b></td></tr></table></div>
-  <p class="small" style="margin:8px 0 0">Receivable is what a traveler paid beyond their own share. Outstanding Balance in red brackets means money is still owed to that traveler.</p>`;
-  sugg=settle(c);const pay=trip.payments||[];
-  $("#st").innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">To pay</h3>${sugg.length?sugg.map((s,i)=>`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" onchange="recordPay(${i})">${esc(s[0])} pays ${esc(s[1])}</label><input id="pa${i}" type="number" step="any" inputmode="decimal" value="${r2(s[2])}"></div>`).join(""):`<p class="empty">Everyone is settled.</p>`}
-  <h3 style="font-size:16px;margin:14px 0 6px">Paid and settled</h3>${pay.length?pay.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):`<p class="empty">Nothing yet. Tick a payment above once it has been paid. You can change the amount for part payments.</p>`}`}
+  $("#ov").innerHTML=`<div class="wrap"><table><tr><th>Traveler</th><th class="n">Receivable</th><th class="n">Share</th><th class="n">Paid Amount</th><th class="n">Outstanding Balance</th></tr>${P.map(n=>`<tr><td>${esc(n)}</td><td class="n">${fmt(c[n].recv)}</td><td class="n">${fmt(c[n].share)}</td><td class="n">${fmt(c[n].paid)}</td><td class="n">${neg(c[n].out)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="n"><b>${fmt(T.recv)}</b></td><td class="n"><b>${fmt(T.share)}</b></td><td class="n"><b>${fmt(T.paid)}</b></td><td class="n">–</td></tr></table></div>
+  <p class="small" style="margin:8px 0 0">Paid Amount is only what has been settled (payments you tick below, full or partial). Money a traveler paid upfront is not counted there; it shows as Receivable, the amount others owe them. Outstanding Balance is what is left to settle, and red brackets mean money is still owed to that traveler.</p>`;
+  $("#st").innerHTML=`<button onclick="openSettle()">Settle payment</button>`;if(mdlMode==="st")renderSettle()}
  $("#rc").innerHTML=showRc?`<div class="row"><button onclick="print()">Print / save as PDF</button><button class="ghost" onclick="png()">Download as image</button><button class="ghost" onclick="openM()">Edit selection</button><button class="ghost" onclick="hideRc()">Hide receipt</button></div>`:`<button onclick="openM()">Generate receipt</button>`;
  $("#slips").innerHTML=showRc?slips():"";fit();
 }
 
 /* ---------- receipts ---------- */
+function openSettle(){mdlMode="st";renderSettle();$("#mdl").classList.add("on")}
+function renderSettle(){const P=trip.people,pay=trip.payments||[];sugg=settle(calc(trip.expenses));
+ $("#mc").innerHTML=`<h2 style="margin-bottom:10px">Settle payment</h2>`+`<h3 style="font-size:16px;margin-bottom:6px">To pay</h3>${sugg.length?sugg.map((s,i)=>`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" onchange="recordPay(${i})">${esc(s[0])} pays ${esc(s[1])}</label><input id="pa${i}" type="number" step="any" inputmode="decimal" value="${r2(s[2])}"></div>`).join(""):`<p class="empty">Everyone is settled.</p>`}
+  <h3 style="font-size:16px;margin:14px 0 6px">Paid and settled</h3>${pay.length?pay.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):`<p class="empty">Nothing yet. Tick a payment above once it has been paid. Change the amount first if it is a part payment.</p>`}<div class="row" style="margin-top:14px"><select id="pf" style="width:auto">${P.map(n=>`<option>${esc(n)}</option>`).join("")}</select><span>paid</span><select id="pt" style="width:auto">${P.map((n,i)=>`<option${i===1?" selected":""}>${esc(n)}</option>`).join("")}</select><input id="pm" type="number" step="any" inputmode="decimal" placeholder="PHP amount" style="width:130px"><button class="ghost" onclick="addPay()">+ Add payment</button></div>`+`<div class="row" style="margin-top:14px"><button class="ghost" onclick="closeM()">Close</button></div>`}
 function hideRc(){showRc=false;lists()}
-function closeM(){$("#mdl").classList.remove("on")}
+function closeM(){mdlMode=null;$("#mdl").classList.remove("on")}
 function selAll(cls,c){document.querySelectorAll("."+cls).forEach(x=>x.checked=c)}
 function openM(){const P=trip.people,ex=[...trip.expenses].sort(byCode),solo=!!trip.solo;
  const ckw=(k,l)=>`<label class="ck"><input type="checkbox" class="cw" data-k="${esc(k)}" ${exclWho.has(k)?"":"checked"}>${esc(l)}</label>`;
@@ -317,7 +327,7 @@ function openM(){const P=trip.people,ex=[...trip.expenses].sort(byCode),solo=!!t
  <details><summary>Expenses included for everyone</summary><label class="ck"><input type="checkbox" checked onchange="selAll('ce',this.checked)">Select all</label>${ex.map(e=>`<label class="ck"><input type="checkbox" class="ce" data-k="${e.id}" ${exclEx.has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses yet.</p>`}</details>
  ${solo?"":`<details><summary>Include or exclude per traveler</summary>${P.map(per).join("")}</details>`}
  <div class="row" style="margin-top:12px"><button onclick="applyRc()">Show receipts</button><button class="ghost" onclick="closeM()">Cancel</button></div>`;
- $("#mdl").classList.add("on")}
+ mdlMode="rc";$("#mdl").classList.add("on")}
 function applyRc(){exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];
  document.querySelectorAll(".cw").forEach(x=>{if(!x.checked)exclWho.add(x.dataset.k)});
  document.querySelectorAll(".ce").forEach(x=>{if(!x.checked)exclEx.add(x.dataset.k)});
