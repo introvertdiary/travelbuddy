@@ -1,54 +1,61 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Travel Buddy</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f8f3ea;--card:#fffcf6;--sand:#e9dfcb;--lilac:#e8ddff;--orchid:#c4aaf5;--violet:#7a4fd8;--deep:#3a2373;--pink:#e3d4ff;--ink:#2d2640;--mute:#7b7288;--ok:#5a34c4;--bad:#a8326e}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif}
-h1,h2,h3{font-family:Poppins,sans-serif;font-weight:600;margin:0;color:var(--deep)}
-body{background:#f8f3ea}
+:root{--bg:#f8f3ea;--card:#fffcf6;--sand:#e9dfcb;--lilac:#e8ddff;--orchid:#c4aaf5;--violet:#7a4fd8;--deep:#3a2373;--pink:#e3d4ff;--ink:#2d2640;--mute:#7b7288;--ok:#5a34c4;--bad:#c62828}
+*{box-sizing:border-box}body{margin:0;background:#f8f3ea;color:var(--ink);font:15px/1.5 "Courier Prime",ui-monospace,monospace}
+h1,h2,h3{font-family:"Special Elite","Courier Prime",monospace;font-weight:400;margin:0;color:var(--deep)}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;background:#fffcf6;color:var(--ink);border-bottom:1px solid var(--sand)}
-header h1{color:var(--deep);font-size:21px;cursor:pointer;display:flex;align-items:center;gap:8px}#auth{display:flex;gap:10px;align-items:center;font-size:13px}
+header h1{color:var(--deep);font-size:22px;cursor:pointer;display:flex;align-items:center;gap:8px}
+#auth{display:flex;gap:8px;align-items:center;font-size:13px;flex-wrap:wrap;justify-content:flex-end}
 main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
 section{background:var(--card);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 2px 12px #8a6d3b1a}
-section>h2{font-size:20px;margin-bottom:12px}
+section>h2{font-size:21px;margin-bottom:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
-input,select,button{font:inherit}
-input,select{width:100%;padding:9px 11px;border:1.5px solid var(--sand);border-radius:10px;background:#fffdf8;color:var(--ink)}
-input:focus,select:focus,button:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
-button{background:var(--violet);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:600}
+input,select,button,textarea{font:inherit}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--sand);border-radius:10px;background:#fffdf8;color:var(--ink)}
+input[type=checkbox]{width:auto;accent-color:var(--violet)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
+button{background:var(--violet);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:700}
 button:hover{background:#6a49c4}button.ghost{background:var(--lilac);color:var(--deep)}button.ghost:hover{background:var(--orchid)}
 button.x{background:none;color:var(--bad);padding:2px 8px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sp{justify-content:space-between}
-.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{display:flex;align-items:center;gap:6px;background:var(--lilac);border-radius:99px;padding:5px 12px;font-size:14px;color:var(--deep);cursor:pointer}
-.chip input{width:auto;accent-color:var(--violet)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{display:flex;align-items:center;gap:6px;background:var(--lilac);border-radius:99px;padding:5px 12px;font-size:14px;color:var(--deep);cursor:pointer;margin:0}
+.chip.sm{padding:3px 9px;font-size:12px}
+.ck{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;color:var(--ink);margin:0;cursor:pointer}
 .tag{background:var(--pink);color:var(--deep);border-radius:99px;padding:3px 10px;font-size:12px}
-.code{font-family:"IBM Plex Mono",monospace;background:var(--lilac);border-radius:6px;padding:1px 7px;font-size:13px;color:var(--deep)}
+.code{background:var(--lilac);border-radius:6px;padding:1px 7px;font-size:13px;color:var(--deep)}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--sand);vertical-align:top}
-th{font-size:12px;color:var(--mute);font-weight:600}td.n,th.n{text-align:right;white-space:nowrap}
-.pos{color:var(--ok)}.neg{color:var(--bad)}.empty{color:var(--mute);padding:8px 0}.small{font-size:12px;color:var(--mute)}
-.wrap{overflow-x:auto}
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:12px;display:none;max-width:90%;z-index:9}
+th{font-size:12px;color:var(--mute);font-weight:700}td.n,th.n{text-align:right;white-space:nowrap}
+.neg{color:var(--bad);font-weight:700}.empty{color:var(--mute);padding:8px 0}.small{font-size:12px;color:var(--mute)}
+.wrap{overflow-x:auto}.blk{margin-top:14px}
+.crow{display:flex;gap:10px;align-items:center;margin-bottom:6px}.crow>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.crow input{width:130px;flex:none}
+.item{border:1.5px dashed var(--orchid);border-radius:12px;padding:10px;margin-bottom:10px}.g2i{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+details{border:1.5px solid var(--sand);border-radius:12px;padding:8px 12px;margin-bottom:10px;background:#fffdf8}summary{cursor:pointer;font-weight:700;color:var(--deep)}
+details details{margin:8px 0 0;background:#fff}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:12px;display:none;max-width:90%;z-index:50}
+.mdl{position:fixed;inset:0;background:#2d264088;display:none;place-items:center;z-index:40}.mdl.on{display:grid}
+.mc{background:var(--card);border-radius:18px;max-width:540px;width:calc(100% - 24px);max-height:88vh;overflow:auto;padding:18px}
 #slips{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;align-items:flex-start}
-.slip{background:#fff;width:320px;max-width:100%;padding:18px 16px;font:13px/1.45 "IBM Plex Mono",monospace;color:#222;border:1px dashed var(--orchid);border-radius:4px}
-.slip h3{font-family:"IBM Plex Mono",monospace;font-size:15px;text-align:center;font-weight:500}
+.slip{background:#fff;width:330px;max-width:100%;padding:18px 16px;font:13px/1.45 "Courier Prime",monospace;color:#222;border:1px dashed var(--orchid);border-radius:4px}
+.slip h3{font-family:"Special Elite","Courier Prime",monospace;font-size:16px;text-align:center;color:#222}
 .slip .c{text-align:center;color:#777}.slip hr{border:0;border-top:1px dashed #bbb;margin:9px 0}
-.slip .ln{display:flex;justify-content:space-between;gap:8px}.slip .ln span:last-child{white-space:nowrap}
-.slip small{color:#777;display:block}.slip .tot{font-weight:500;font-size:14px}
-@media print{body *{visibility:hidden}#slips,#slips *{visibility:visible}#slips{position:absolute;left:0;top:0;width:100%;display:block}.slip{border:0;margin:0 auto 20px;page-break-after:always;break-inside:avoid}}
+.slip .ln{display:flex;justify-content:space-between;gap:10px;white-space:nowrap;overflow:hidden}
+.slip .nm{text-align:center;font-weight:700;font-size:15px;margin-top:4px}.slip .tot{font-weight:700}
+@media print{body *{visibility:hidden}#slips,#slips *{visibility:visible}#slips{position:absolute;left:0;top:0;width:100%;display:block}.slip{border:0;margin:0 auto 20px;page-break-after:always;break-inside:avoid}.mdl{display:none!important}}
 .ic{width:1em;height:1em;flex:none}header h1 .ic{width:26px;height:26px;color:var(--violet);transform:rotate(45deg)}
 .hero{background:#fffcf6;border-radius:18px;padding:20px 20px 6px;margin-bottom:18px;box-shadow:0 2px 12px #8a6d3b1a}
-.hero h2{font-size:26px}.hero p{margin:4px 0 0;color:var(--mute)}.hero svg{width:100%;height:auto;display:block;margin-top:6px}
-.stamp{width:56px;height:56px;border-radius:50%;border:2.5px double var(--violet);color:var(--violet);display:grid;place-items:center;font:600 17px Poppins,sans-serif;transform:rotate(-9deg);flex:none;background:#f3ecff}
+.hero h2{font-size:27px}.hero p{margin:4px 0 0;color:var(--mute)}.hero svg{width:100%;height:auto;display:block;margin-top:6px}
+.stamp{width:56px;height:56px;border-radius:50%;border:2.5px double var(--violet);color:var(--violet);display:grid;place-items:center;font:400 18px "Special Elite",monospace;transform:rotate(-9deg);flex:none;background:#f3ecff}
 .plane-sm{width:18px;height:18px;vertical-align:-3px;color:var(--violet);transform:rotate(45deg);display:inline-block}
 .grid.g4{grid-template-columns:1.3fr 1.2fr .8fr .9fr;gap:clamp(6px,1.8vw,10px)}.g4>*{min-width:0}
-@media(max-width:640px){.g4 input,.g4 select{font-size:12.5px;padding:9px 7px;border-radius:9px}.g4 label{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lx{display:none}}
-@media(max-width:380px){.g4 input,.g4 select{font-size:11.5px;padding:8px 5px}.g4 label{font-size:9.5px}}
-.grid.g4.ex{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:dense}
-@media(max-width:640px){.g4 input[type=date]{padding-left:4px;padding-right:2px;font-size:11px}}
 .grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .grid.g4.g3{grid-template-columns:1.5fr 1.3fr .9fr}
+.grid.g4.ex{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:dense}
+@media(max-width:640px){.g4 input,.g4 select{font-size:12px;padding:9px 6px;border-radius:9px}.g4 label{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lx{display:none}.g4 input[type=date]{padding-left:3px;padding-right:1px;font-size:10.5px}.crow input{width:104px}}
+@media(max-width:380px){.g4 input,.g4 select{font-size:11px;padding:8px 4px}.g4 label{font-size:9.5px}}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -56,79 +63,107 @@ th{font-size:12px;color:var(--mute);font-weight:600}td.n,th.n{text-align:right;w
 <symbol id="bag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="13" rx="2.5"/><path d="M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2M9 11v5M15 11v5"/></g></symbol>
 </defs></svg>
 <header><h1 onclick="home()"><svg class="ic"><use href="#plane"/></svg>Travel Buddy</h1><div id="auth"></div></header>
-<main id="app"></main><input type="file" id="fi" accept=".json,application/json" hidden onchange="importFile(this)"><div id="toast"></div>
-
+<main id="app"></main><input type="file" id="fi" accept=".json,application/json" hidden onchange="importFile(this)">
+<div class="mdl" id="mdl" onclick="if(event.target===this)closeM()"><div class="mc" id="mc"></div></div><div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const COUNTRIES=[["JP","Japan","JPY"],["KR","South Korea","KRW"],["SG","Singapore","SGD"],["TH","Thailand","THB"],["VN","Vietnam","VND"],["HK","Hong Kong","HKD"],["TW","Taiwan","TWD"],["CN","China","CNY"],["MY","Malaysia","MYR"],["ID","Indonesia","IDR"],["US","United States","USD"],["CA","Canada","CAD"],["AU","Australia","AUD"],["NZ","New Zealand","NZD"],["GB","United Kingdom","GBP"],["FR","France","EUR"],["IT","Italy","EUR"],["ES","Spain","EUR"],["DE","Germany","EUR"],["CH","Switzerland","CHF"],["AE","UAE","AED"],["PH","Philippines","PHP"]];
 const MODES=["Cash","Credit card","Debit card","GCash","Bank transfer","Other"];
+const BOOKS=["Agoda","Klook","Booking.com","Airbnb","Trip.com","Traveloka","Expedia","KKday","Direct / walk-in"];
 const HERO=`<div class="hero"><h2>Where to next?</h2><p>Split trip costs in any currency and settle up in pesos.</p>
 <svg viewBox="0 0 640 120" aria-hidden="true"><ellipse cx="130" cy="30" rx="34" ry="10" fill="#f1e8d6"/><ellipse cx="156" cy="24" rx="22" ry="9" fill="#f1e8d6"/><ellipse cx="400" cy="100" rx="40" ry="10" fill="#f1e8d6"/><ellipse cx="428" cy="94" rx="24" ry="9" fill="#f1e8d6"/>
 <path d="M44 98 C170 8 300 128 470 52 S585 28 598 24" fill="none" stroke="#7a4fd8" stroke-width="2.5" stroke-dasharray="2 8" stroke-linecap="round"/>
 <circle cx="300" cy="78" r="5" fill="#e9a23b"/><circle cx="470" cy="52" r="5" fill="#e9a23b"/>
 <use href="#bag" x="8" y="78" width="38" height="38" style="color:#7a4fd8"/>
 <use href="#plane" x="580" y="4" width="40" height="40" transform="rotate(62 600 24)" style="color:#7a4fd8"/></svg></div>`;
-const BOOKS=["Agoda","Klook","Booking.com","Airbnb","Trip.com","Traveloka","Expedia","KKday","Direct / walk-in"];
-const ph=e=>e.php!=null?e.php:e.amount*e.rate;
-let trip=null,shellId=null,editId=null,showRc=false;
-const exclEx=new Set(),exclWho=new Set();
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const rt=n=>Number(n).toLocaleString("en-US",{maximumFractionDigits:6});
+const r2=n=>(Math.round(n*100)/100).toFixed(2);
 const uid=()=>Math.random().toString(36).slice(2,10);
-const canEdit=()=>true;
-function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",3500)}
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const ph=e=>e.php!=null?e.php:e.amount*e.rate;
+const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
+const neg=n=>n<-.005?`<span class="neg">(${fmt(-n)})</span>`:fmt(Math.abs(n)<.005?0:n);
+const byCode=(a,b)=>a.code>b.code?1:-1;
+let trip=null,shellId=null,editId=null,showRc=false,last="rate",editCur=null,items=[],custVals={},payVals={},amtAuto=true,sugg=[];
+const exclWho=new Set(),exclEx=new Set(),exclPer=Object.create(null);
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",4000)}
 
+/* ---------- storage / files ---------- */
 function save(t){try{localStorage.setItem("ps:"+t.id,JSON.stringify(t))}catch(e){toast("Could not save in this browser. Download your trip file now.")}}
+const allTrips=()=>Object.keys(localStorage).filter(k=>k.startsWith("ps:")).map(k=>{try{return JSON.parse(localStorage[k])}catch{return null}}).filter(Boolean);
 function topbar(){$("#auth").innerHTML=`<button class="ghost" onclick="$('#fi').click()">Open saved file</button>`}
 const dTxt=t=>t.start&&t.end?new Date(t.start+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" – "+new Date(t.end+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";
 function tripCode(t){if(!t.start||!t.end)return t.cc+"-"+(String(t.name).replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")||"trip");const a=t.start.split("-"),b=t.end.split("-");return String(t.cc).replace(/[^\w]/g,"")+a[1]+a[2]+"-"+(a[1]===b[1]?b[2]:b[1]+b[2])}
-function defDate(){let d=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);if(trip&&trip.start&&d<trip.start)d=trip.start;if(trip&&trip.end&&d>trip.end)d=trip.end;return d}
-function setDates(){const a=$("#d1").value,b=$("#d2").value;if(a&&b&&b<a){toast("The end date can't be before the start date.");$("#d1").value=trip.start||"";$("#d2").value=trip.end||"";return}trip.start=a;trip.end=b;save(trip);$("#fn").textContent=tripCode(trip)+".json";lists()}
-function exportTrip(t=trip){const b=new Blob([JSON.stringify({app:"travel-buddy",version:1,trip:t},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=tripCode(t)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast("Downloaded "+tripCode(t)+".json. Keep it somewhere safe.")}
+function defDate(){let d=today();if(trip&&trip.start&&d<trip.start)d=trip.start;if(trip&&trip.end&&d>trip.end)d=trip.end;return d}
+function dl(obj,name){const b=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast("Downloaded "+name+". Keep it somewhere safe.")}
+function exportTrip(t=trip){dl({app:"travel-buddy",version:2,trip:t},tripCode(t)+".json")}
 function exportById(id){const t=JSON.parse(localStorage.getItem("ps:"+id)||"null");if(t)exportTrip(t)}
+function exportAll(){const L=allTrips();if(!L.length)return toast("No trips to download yet.");dl({app:"travel-buddy",version:2,trips:L},"TravelBuddy-all-trips-"+today().replace(/-/g,"")+".json")}
 function delTrip(id){if(!confirm("Delete this trip from this browser? Download it first if you want a copy."))return;localStorage.removeItem("ps:"+id);home()}
+function norm(t){
+ if(!t||typeof t.id!=="string"||!/^[\w-]{4,40}$/.test(t.id)||!t.name||!t.cc||!t.cur||!Array.isArray(t.people)||!t.people.length||!Array.isArray(t.expenses))throw 0;
+ t.people=t.people.map(String);
+ t.payments=(Array.isArray(t.payments)?t.payments:[]).map(x=>({id:String(x.id||uid()).replace(/[^\w-]/g,"")||uid(),from:String(x.from),to:String(x.to),amount:Number(x.amount),date:String(x.date||"")})).filter(x=>x.amount>0);
+ t.expenses.forEach(e=>{e.amount=Number(e.amount);e.rate=Number(e.rate);if(e.php!=null)e.php=Number(e.php);
+  if(!(e.amount>0)||!(e.rate>0)||(e.php!=null&&!(e.php>0))||!Array.isArray(e.share)||!/^[\w-]+$/.test(String(e.id)))throw 0;
+  e.id=String(e.id);e.share=e.share.map(String);e.payer=String(e.payer||t.people[0]);
+  if(e.items)e.items=e.items.map(i=>({name:String(i.name||""),orig:String(i.orig||""),amount:Number(i.amount)||0,owners:Array.isArray(i.owners)?i.owners.map(String):[]}));
+  if(e.alloc)for(const k in e.alloc)e.alloc[k]=Number(e.alloc[k])||0;
+  if(e.payers)for(const k in e.payers)e.payers[k]=Number(e.payers[k])||0});
+ return t}
 function importFile(inp){const f=inp.files[0];inp.value="";if(!f)return;const rd=new FileReader();
  rd.onerror=()=>toast("Could not read that file.");
- rd.onload=()=>{try{const d=JSON.parse(rd.result),t=d.trip||d;
-  if(!t||typeof t.id!=="string"||!t.name||!t.cc||!t.cur||!Array.isArray(t.people)||!Array.isArray(t.expenses))throw 0;
-  t.expenses.forEach(e=>{e.amount=Number(e.amount);e.rate=Number(e.rate);if(e.php!=null)e.php=Number(e.php);if(!(e.amount>0)||!(e.rate>0)||(e.php!=null&&!(e.php>0))||!Array.isArray(e.share)||!e.id)throw 0});
-  if(localStorage.getItem("ps:"+t.id)&&!confirm("This trip is already saved in this browser. Replace it with the version in the file?"))return;
-  save(t);openTrip(t.id);toast("Trip loaded")}catch(e){toast("That doesn't look like a Travel Buddy trip file.")}};
+ rd.onload=()=>{try{const d=JSON.parse(rd.result),raw=Array.isArray(d.trips)?d.trips:[d.trip||d],list=raw.map(norm);if(!list.length)throw 0;
+  const ex=list.filter(t=>localStorage.getItem("ps:"+t.id));let rep=true;
+  if(ex.length)rep=confirm(list.length===1?"This trip is already saved in this browser. Replace it with the version in the file?":ex.length+" of "+list.length+" trips in this file are already saved in this browser. Replace them with the versions in the file? (Cancel keeps your current copies and adds only the new ones.)");
+  let n=0;list.forEach(t=>{if(localStorage.getItem("ps:"+t.id)&&!rep)return;save(t);n++});
+  if(list.length===1&&n===1)openTrip(list[0].id);else home();
+  toast(n+" trip"+(n===1?"":"s")+" loaded")}catch(e){toast("That doesn't look like a Travel Buddy file.")}};
  rd.readAsText(f)}
 
 /* ---------- calculations ---------- */
-function calc(list){const p={};trip.people.forEach(n=>p[n]={paid:0,owes:0});
- list.forEach(e=>{const php=ph(e);if(p[e.payer])p[e.payer].paid+=php;const s=e.share.filter(n=>p[n]);s.forEach(n=>p[n].owes+=php/s.length)});return p}
-function settle(c){const d=[],cr=[];for(const n in c){const v=c[n].paid-c[n].owes;if(v>.005)cr.push([n,v]);else if(v<-.005)d.push([n,-v])}
+function shares(e){const tot=ph(e),o=Object.create(null);
+ if(e.items&&e.items.length){const sum=e.items.reduce((s,i)=>s+i.amount,0)||1;e.items.forEach(i=>{const ow=i.owners.length?i.owners:e.share;ow.forEach(n=>o[n]=(o[n]||0)+i.amount/sum*tot/ow.length)});return o}
+ if(e.alloc){for(const n in e.alloc)o[n]=e.alloc[n];return o}
+ e.share.forEach(n=>o[n]=tot/e.share.length);return o}
+function payersOf(e){const o=Object.create(null);if(e.payers&&Object.keys(e.payers).length){for(const n in e.payers)o[n]=e.payers[n]}else o[e.payer]=ph(e);return o}
+function calc(list){const p=Object.create(null);trip.people.forEach(n=>p[n]={recv:0,share:0,front:0,sp:0,sr:0,paid:0,out:0});
+ list.forEach(e=>{const pm=payersOf(e);for(const n in pm)if(p[n])p[n].front+=pm[n];const sh=shares(e);for(const n in sh)if(p[n])p[n].share+=sh[n]});
+ (trip.payments||[]).forEach(x=>{if(p[x.from])p[x.from].sp+=x.amount;if(p[x.to])p[x.to].sr+=x.amount});
+ for(const n in p){const q=p[n];q.paid=q.front+q.sp;q.recv=Math.max(q.front-q.share,0);q.out=q.share-q.front-q.sp+q.sr}return p}
+function settle(c){const d=[],cr=[];for(const n in c){const v=c[n].out;if(v>.005)d.push([n,v]);else if(v<-.005)cr.push([n,-v])}
  const r=[];let i=0,j=0;while(i<d.length&&j<cr.length){const m=Math.min(d[i][1],cr[j][1]);r.push([d[i][0],cr[j][0],m]);d[i][1]-=m;cr[j][1]-=m;if(d[i][1]<.005)i++;if(cr[j][1]<.005)j++}return r}
 function nextCode(){const re=new RegExp("^"+trip.cc+"(\\d+)$");const m=Math.max(0,...trip.expenses.map(e=>(re.exec(e.code)||[0,0])[1]*1));return trip.cc+String(m+1).padStart(3,"0")}
 
 /* ---------- home ---------- */
-async function home(){
+function home(){
  trip=null;shellId=null;topbar();
- let list=Object.keys(localStorage).filter(k=>k.startsWith("ps:")).map(k=>{try{return JSON.parse(localStorage[k])}catch{return null}}).filter(Boolean);
- list.sort((a,b)=>b.created-a.created);
- const form=canEdit()?`<section><h2>Start a trip</h2><div class="grid g4 g3">
-  <div><label>Trip name</label><input id="tn" placeholder="Tokyo with the girls"></div>
+ const list=allTrips().sort((a,b)=>b.created-a.created);
+ const form=`<section><h2>Start a trip</h2><div class="grid g4 g3">
+  <div><label>Trip name</label><input id="tn" placeholder="Trip name"></div>
   <div><label>Country</label><select id="tc" onchange="pickC()">${COUNTRIES.map(c=>`<option value="${c[0]}|${c[1]}|${c[2]}">${c[1]} (${c[0]})</option>`).join("")}</select></div>
   <div><label>Currency</label><input id="tcur" maxlength="3" value="JPY"></div>
   </div>
   <div class="grid g2" style="margin-top:10px"><div><label>Travel start</label><input id="ts" type="date"></div><div><label>Travel end</label><input id="te" type="date"></div></div>
-  <div style="margin-top:10px"><label>Participants, separated by commas (include yourself)</label><input id="tp" placeholder="Haru, Mika, Jo"></div>
-  <div style="margin-top:12px"><button onclick="createTrip()">Create trip</button></div></section>`
-  :"";
- $("#app").innerHTML=HERO+form+`<section><h2><svg class="plane-sm"><use href="#plane"/></svg> Your trips</h2>${list.length?list.map(t=>`<div class="row sp" style="padding:8px 0;border-bottom:1px solid var(--sand)"><div><b>${esc(t.name)}</b> <span class="tag">${esc(t.country)} · ${esc(t.cur)}</span><div class="small">${dTxt(t)?esc(dTxt(t))+" · ":""}${t.people.map(esc).join(", ")}</div></div><div class="row"><button class="ghost" onclick="openTrip('${t.id}')">Open</button><button class="ghost" onclick="exportById('${t.id}')">Download</button><button class="x" onclick="delTrip('${t.id}')">Delete</button></div></div>`).join(""):`<p class="empty">No trips yet. Start one above, or open a saved trip file.</p>`}<p class="small" style="margin:12px 0 0">Trips are saved in this browser only. Download a trip file to back it up or continue on another device.</p></section>`;
+  <div style="margin-top:10px"><label class="ck" style="margin-bottom:6px"><input type="checkbox" id="solo" onchange="soloChange()">Solo trip (just me, no splitting)</label><label id="tpl">Participants, separated by commas (include yourself)</label><input id="tp" placeholder="Names, separated by commas"></div>
+  <div style="margin-top:12px"><button onclick="createTrip()">Create trip</button></div></section>`;
+ $("#app").innerHTML=HERO+form+`<section><h2><svg class="plane-sm"><use href="#plane"/></svg> Your trips</h2>
+  <div class="row" style="margin-bottom:8px"><button class="ghost" onclick="exportAll()">Download all trips (one file)</button><span class="small">Open it later with "Open saved file". It restores every trip at once.</span></div>
+  ${list.length?list.map(t=>`<div class="row sp" style="padding:8px 0;border-bottom:1px solid var(--sand)"><div><b>${esc(t.name)}</b> <span class="tag">${esc(t.country)} · ${esc(t.cur)}${t.solo?" · solo":""}</span><div class="small">${dTxt(t)?esc(dTxt(t))+" · ":""}${t.people.map(esc).join(", ")}</div></div><div class="row"><button class="ghost" onclick="openTrip('${t.id}')">Open</button><button class="ghost" onclick="exportById('${t.id}')">Download</button><button class="x" onclick="delTrip('${t.id}')">Delete</button></div></div>`).join(""):`<p class="empty">No trips yet. Start one above, or open a saved file.</p>`}
+  <p class="small" style="margin:12px 0 0">Trips are saved in this browser only. Download a file to back it up or continue on another device.</p></section>`;
 }
 function pickC(){const [,,cur]=$("#tc").value.split("|");$("#tcur").value=cur}
-async function createTrip(){
+function soloChange(){const s=$("#solo").checked;$("#tpl").textContent=s?"Your name":"Participants, separated by commas (include yourself)";$("#tp").placeholder=s?"Your name":"Names, separated by commas"}
+function createTrip(){
  const [cc,country]=$("#tc").value.split("|"),cur=$("#tcur").value.toUpperCase().trim();
- const people=[...new Set($("#tp").value.split(",").map(s=>s.trim()).filter(Boolean))];
- if(!$("#tn").value.trim()||cur.length!==3||people.length<1)return toast("Add a trip name, a 3-letter currency and at least one participant.");
+ let people=[...new Set($("#tp").value.split(",").map(s=>s.trim()).filter(Boolean))];const solo=$("#solo").checked||people.length===1;if(solo)people=people.slice(0,1);
+ if(!$("#tn").value.trim()||cur.length!==3||people.length<1)return toast("Add a trip name, a 3-letter currency and at least one name.");
  const ds=$("#ts").value,de=$("#te").value;if(!ds||!de||de<ds)return toast("Add the travel dates. The end date can't be before the start date.");
- const t={id:uid()+uid(),name:$("#tn").value.trim(),cc,country,cur,people,start:ds,end:de,expenses:[],created:Date.now()};
- await save(t);openTrip(t.id);
+ const t={id:uid()+uid(),name:$("#tn").value.trim(),cc,country,cur,people,solo,start:ds,end:de,expenses:[],payments:[],created:Date.now()};
+ save(t);openTrip(t.id);
 }
 
 /* ---------- trip ---------- */
@@ -136,95 +171,180 @@ function openTrip(id){shellId=null;trip=JSON.parse(localStorage.getItem("ps:"+id
 function showTrip(){
  topbar();
  if(!trip){$("#app").innerHTML=`<section><p class="empty">Trip not found.</p><button onclick="home()">Back to trips</button></section>`;shellId=null;return}
- if(shellId!==trip.id){showRc=false;shell();shellId=trip.id;if(canEdit())resetForm()}
+ if(shellId!==trip.id){showRc=false;exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];shell();shellId=trip.id;resetForm()}
  lists();
 }
+function setDates(){const a=$("#d1").value,b=$("#d2").value;if(a&&b&&b<a){toast("The end date can't be before the start date.");$("#d1").value=trip.start||"";$("#d2").value=trip.end||"";return}trip.start=a;trip.end=b;save(trip);$("#fn").textContent=tripCode(trip)+".json";lists()}
 function shell(){
- const t=trip,ed=canEdit();
- $("#app").innerHTML=`<section><div class="row sp"><div class="row" style="flex-wrap:nowrap"><div class="stamp">${esc(t.cc)}</div><div><h2>${esc(t.name)}</h2><span class="tag">${esc(t.country)} · ${esc(t.cur)} · home PHP</span></div></div>
-  <div class="row"><button class="ghost" onclick="exportTrip()">Download trip file</button><button class="ghost" onclick="home()">All trips</button></div></div>
-  <div class="row" style="margin-top:12px"><label style="margin:0">Travel dates</label><input id="d1" type="date" value="${esc(t.start||"")}" onchange="setDates()" style="width:auto"><span>to</span><input id="d2" type="date" value="${esc(t.end||"")}" onchange="setDates()" style="width:auto"><span class="small">File name: <b id="fn">${esc(tripCode(t))}.json</b></span></div><p class="small" style="margin-top:8px">Saved in this browser. Download the trip file to back it up or continue on another device.</p></section>
- ${ed?`<section><h2 id="ft">Add expense</h2><div class="grid g4 ex">
-  <div><label><span class="lx">Control </span>code</label><input id="code" value="${nextCode()}"></div>
+ const t=trip,solo=!!t.solo;
+ $("#app").innerHTML=`<section><div class="row sp"><div class="row" style="flex-wrap:nowrap"><div class="stamp">${esc(t.cc)}</div><div><h2>${esc(t.name)}</h2><span class="tag">${esc(t.country)} · ${esc(t.cur)} · home PHP${solo?" · solo":""}</span></div></div>
+  <div class="row"><button class="ghost" onclick="exportTrip()">Download this trip</button><button class="ghost" onclick="home()">All trips</button></div></div>
+  <div class="row" style="margin-top:12px"><label style="margin:0">Travel dates</label><input id="d1" type="date" value="${esc(t.start||"")}" onchange="setDates()" style="width:auto"><span>to</span><input id="d2" type="date" value="${esc(t.end||"")}" onchange="setDates()" style="width:auto"><span class="small">File name: <b id="fn">${esc(tripCode(t))}.json</b></span></div>
+  <p class="small" style="margin:8px 0 0">Saved in this browser. Download the trip file to back it up or continue on another device.</p></section>
+ <section><h2 id="ft">Add expense</h2><div class="grid g4 ex">
+  <div><label><span class="lx">Control </span>code</label><input id="code"></div>
   <div><label>Date</label><input id="date" type="date" value="${defDate()}"></div>
-  <div style="grid-column:span 2"><label>Description</label><input id="desc" placeholder="Dinner at Ichiran"></div>
-  <div><label id="al">Amount</label><input id="amt" type="number" step="any" inputmode="decimal" oninput="onAmt()"></div>
+  <div style="grid-column:span 2"><label>Description</label><input id="desc" placeholder="Description of the transaction"></div>
+  <div><label id="al">Amount</label><input id="amt" type="number" step="any" inputmode="decimal" oninput="amtAuto=false;onAmt()"></div>
   <div><label>Paid in</label><select id="kind" onchange="kindChange()">${t.cur==="PHP"?"":`<option value="foreign">${esc(t.cur)}</option>`}<option value="php">PHP</option></select></div>
   <div id="fr"><label>Rate<span class="lx"> (PHP per 1 unit)</span></label><input id="rate" type="number" step="any" inputmode="decimal" oninput="onRate()"></div>
   <div id="fc"><label>PHP<span class="lx"> amount</span></label><input id="php" type="number" step="any" inputmode="decimal" oninput="onPhp()"></div>
   <div><label>Mode<span class="lx"> of payment</span></label><select id="mode">${MODES.map(m=>`<option>${m}</option>`).join("")}</select></div>
-  <div style="grid-column:span 2"><label>Booked via<span class="lx"> (optional)</span></label><input id="book" list="bk" placeholder="Agoda, Klook..."><datalist id="bk">${BOOKS.map(b=>`<option value="${b}">`).join("")}</datalist></div>
-  <div><label>Who paid</label><select id="payer">${t.people.map(p=>`<option>${esc(p)}</option>`).join("")}</select></div></div>
-  <label style="margin-top:12px">Who shares</label><div class="chips">${t.people.map(p=>`<label class="chip"><input type="checkbox" class="sh" value="${esc(p)}" checked>${esc(p)}</label>`).join("")}</div>
-  <div class="row" style="margin-top:14px"><button onclick="addExp()" id="sv">Save expense</button><button class="ghost" id="cn" style="display:none" onclick="resetForm()">Cancel edit</button></div></section>`:""}
+  <div style="grid-column:span 2"><label>Booked via<span class="lx"> (optional)</span></label><input id="book" list="bk" placeholder="Platform where this transaction was booked"><datalist id="bk">${BOOKS.map(b=>`<option value="${b}">`).join("")}</datalist></div>
+  ${solo?"":`<div><label>Who paid</label><select id="payer">${t.people.map(p=>`<option>${esc(p)}</option>`).join("")}</select></div>`}
+  <div style="grid-column:span 4"><label>Receipt link<span class="lx"> (optional: Google Drive, Photos, etc.)</span></label><input id="link" type="url" inputmode="url" placeholder="https://"></div>
+  <div style="grid-column:span 4"><label>Notes<span class="lx"> (optional)</span></label><input id="note"></div></div>
+  ${solo?"":`<div class="blk"><label class="ck"><input type="checkbox" id="mpt" onchange="mpToggle()">Multiple payers (optional)</label><div id="mp" class="blk" style="display:none"></div></div>
+  <div class="blk"><label>Who shares</label><div class="chips" id="shc"><label class="chip"><input type="checkbox" id="shall" onchange="shAll()">All</label>${t.people.map(p=>`<label class="chip"><input type="checkbox" class="sh" value="${esc(p)}" onchange="shChange()">${esc(p)}</label>`).join("")}</div>
+  <div class="row" style="margin-top:10px"><label style="margin:0">Split</label><select id="smode" onchange="splitChange()" style="width:auto"><option value="equal">Equally</option><option value="custom">Custom amounts</option><option value="items">By receipt items</option></select></div>
+  <div id="cust" class="blk" style="display:none"></div>
+  <div id="itm" class="blk" style="display:none"><p class="small" style="margin:0 0 8px">Add each item on the receipt, then tick who it belongs to. Tax or tips are shared in proportion to each person's items.</p><div id="itl"></div><div class="row"><button class="ghost" onclick="items.push({name:'',orig:'',amount:0,owners:[]});renderItems()">Add item</button></div>
+   <label style="margin-top:10px">Paste items<span class="lx"> (one per line: Item | Price, or Original | English | Price)</span></label><textarea id="paste" rows="3"></textarea><div class="row" style="margin-top:6px"><button class="ghost" onclick="pasteItems()">Add pasted items</button></div></div></div>`}
+  <div class="row" style="margin-top:14px"><button onclick="addExp()" id="sv">Save expense</button><button class="ghost" id="cn" style="display:none" onclick="resetForm()">Cancel edit</button></div></section>
  <section><h2>Expenses</h2><div id="exl"></div></section>
- <section><h2>Who owes what</h2><div id="sum"></div></section>
+ <section><h2>Overview of Expenses</h2><div id="ov"></div></section>
+ ${solo?"":`<section><h2>Settle up</h2><div id="st"></div></section>`}
  <section><h2>Receipts</h2><div id="rc"></div><div id="slips"></div></section>`;
 }
-let last="rate",editCur=null;
+
+/* ----- amount / rate / PHP ----- */
 const curNow=()=>editCur||trip.cur;
-function kindChange(){const f=$("#kind").value==="foreign";$("#fc").style.display=$("#fr").style.display=f?"":"none";$("#al").textContent=f?"Amount ("+curNow()+")":"Amount"}
-const r2=n=>(Math.round(n*100)/100).toFixed(2);
-function onAmt(){const a=parseFloat($("#amt").value);if(!(a>0))return;if(last==="php"){const p=parseFloat($("#php").value);if(p>0)$("#rate").value=+(p/a).toFixed(6)}else{const x=parseFloat($("#rate").value);if(x>0)$("#php").value=r2(a*x)}}
-function onRate(){last="rate";const a=parseFloat($("#amt").value),x=parseFloat($("#rate").value);$("#php").value=a>0&&x>0?r2(a*x):""}
-function onPhp(){last="php";const a=parseFloat($("#amt").value),p=parseFloat($("#php").value);$("#rate").value=a>0&&p>0?+(p/a).toFixed(6):""}
-async function addExp(){
- const v=id=>$("#"+id).value,isP=v("kind")==="php",cur=isP?"PHP":curNow(),amount=parseFloat(v("amt"));let rate=1,pv=amount;
- const share=[...document.querySelectorAll(".sh:checked")].map(x=>x.value);
- if(!v("desc").trim()||!(amount>0)||!share.length)return toast("Add a description, an amount and at least one person sharing.");
+function curTotal(){const a=parseFloat($("#amt").value);if(!(a>0))return 0;if($("#kind").value==="php")return a;const p=parseFloat($("#php").value);return p>0?p:0}
+function kindChange(){const f=$("#kind").value==="foreign";$("#fc").style.display=$("#fr").style.display=f?"":"none";$("#al").textContent=f?"Amount ("+curNow()+")":"Amount";if(items.length)itemsChanged();refreshSplit()}
+function onAmt(){const a=parseFloat($("#amt").value);if(a>0){if(last==="php"){const p=parseFloat($("#php").value);if(p>0)$("#rate").value=+(p/a).toFixed(6)}else{const x=parseFloat($("#rate").value);if(x>0)$("#php").value=r2(a*x)}}refreshSplit()}
+function onRate(){last="rate";const a=parseFloat($("#amt").value),x=parseFloat($("#rate").value);$("#php").value=a>0&&x>0?r2(a*x):"";refreshSplit()}
+function onPhp(){last="php";const a=parseFloat($("#amt").value),p=parseFloat($("#php").value);$("#rate").value=a>0&&p>0?+(p/a).toFixed(6):"";refreshSplit()}
+function refreshSplit(){if(trip.solo)return;if($("#smode").value==="custom"){if(Object.keys(custVals).length)custSum();else renderCust()}if($("#mpt").checked)payInfo()}
+
+/* ----- payers ----- */
+function mpToggle(){const on=$("#mpt").checked;$("#mp").style.display=on?"":"none";$("#payer").disabled=on;if(on)renderMp()}
+function renderMp(){$("#mp").innerHTML=trip.people.map(n=>`<div class="crow"><span>${esc(n)}</span><input type="number" step="any" inputmode="decimal" class="pv" data-n="${esc(n)}" value="${payVals[n]!=null?esc(payVals[n]):""}" placeholder="PHP" oninput="payVals[this.dataset.n]=this.value;payInfo()"></div>`).join("")+`<div class="small" id="mi"></div>`;payInfo()}
+function payInfo(){let s=0;document.querySelectorAll(".pv").forEach(i=>{const x=parseFloat(i.value);if(x>0)s+=x});const t=curTotal(),el=$("#mi");if(el)el.innerHTML=`Paid in PHP: ${fmt(s)} of ${fmt(t)}`+(Math.abs(s-t)>.05&&t>0?` <span class="neg">(${fmt(t-s)} left)</span>`:"")}
+
+/* ----- who shares / split ----- */
+const shChecked=()=>[...document.querySelectorAll(".sh:checked")].map(x=>x.value);
+function shAll(){const c=$("#shall").checked;document.querySelectorAll(".sh").forEach(x=>x.checked=c);if($("#smode").value==="custom")renderCust()}
+function shChange(){$("#shall").checked=[...document.querySelectorAll(".sh")].every(x=>x.checked);if($("#smode").value==="custom")renderCust()}
+function splitChange(){const m=$("#smode").value;$("#shc").style.display=m==="items"?"none":"";$("#cust").style.display=m==="custom"?"":"none";$("#itm").style.display=m==="items"?"":"none";
+ if(m==="custom")renderCust();if(m==="items"){if(!items.length)items.push({name:"",orig:"",amount:0,owners:[]});renderItems()}}
+function renderCust(){const sel=shChecked(),tot=curTotal(),k=sel.length;
+ $("#cust").innerHTML=k?sel.map((n,i)=>{const v=custVals[n]!=null?custVals[n]:(tot&&k?(i<k-1?r2(tot/k):r2(tot-Math.round(tot/k*100)/100*(k-1))):"");return`<div class="crow"><span>${esc(n)}</span><input type="number" step="any" inputmode="decimal" class="cv" data-n="${esc(n)}" value="${esc(v)}" placeholder="PHP" oninput="custVals[this.dataset.n]=this.value;custSum()"></div>`}).join("")+`<div class="small" id="cs"></div><div class="row" style="margin-top:6px"><button class="ghost" onclick="custVals={};renderCust()">Split equally</button></div>`:`<p class="small">Tick who shares first.</p>`;custSum()}
+function custSum(){let s=0;document.querySelectorAll(".cv").forEach(i=>{const x=parseFloat(i.value);if(x>0)s+=x});const t=curTotal(),el=$("#cs");if(el)el.innerHTML=`Charged in PHP: ${fmt(s)} of ${fmt(t)}`+(Math.abs(s-t)>.05&&t>0?` <span class="neg">(${fmt(t-s)} left)</span>`:"")}
+
+/* ----- receipt items ----- */
+function renderItems(){const P=trip.people;
+ $("#itl").innerHTML=items.map((it,i)=>`<div class="item"><div class="g2i"><input value="${esc(it.name)}" placeholder="Item (English)" oninput="items[${i}].name=this.value"><input value="${esc(it.orig||"")}" placeholder="Original text (optional)" oninput="items[${i}].orig=this.value"></div>
+  <div class="g2i"><input type="number" step="any" inputmode="decimal" value="${it.amount||""}" placeholder="Amount" oninput="itemAmt(${i},this.value)"><div><button class="x" onclick="items.splice(${i},1);renderItems()">Remove</button></div></div>
+  <div class="chips">${P.map(p=>`<label class="chip sm"><input type="checkbox" ${it.owners.includes(p)?"checked":""} data-p="${esc(p)}" onchange="ownerTog(${i},this.dataset.p,this.checked)">${esc(p)}</label>`).join("")}</div></div>`).join("")+`<div class="small" id="its"></div>`;itemsChanged()}
+function itemAmt(i,v){items[i].amount=parseFloat(v)||0;itemsChanged()}
+function ownerTog(i,p,c){const o=items[i].owners;const k=o.indexOf(p);if(c&&k<0)o.push(p);if(!c&&k>=0)o.splice(k,1)}
+function itemsChanged(){const s=items.reduce((a,i)=>a+(i.amount||0),0),el=$("#its");if(el)el.textContent="Items total: "+fmt(s)+" "+($("#kind").value==="php"?"PHP":curNow());if(amtAuto&&s>0){$("#amt").value=+s.toFixed(2);onAmt()}}
+function pasteItems(){const lines=$("#paste").value.split(/\n/).map(s=>s.trim()).filter(Boolean);if(items.length===1&&!items[0].name&&!items[0].amount)items=[];let n=0;
+ lines.forEach(l=>{const p=l.split(/\s*[|\t]\s*/);if(p.length<2)return;const amt=parseFloat(p[p.length-1].replace(/[^\d.\-]/g,""));if(!(amt>0))return;let name,orig="";if(p.length>=3){orig=p[0];name=p[1]}else name=p[0];items.push({name,orig,amount:amt,owners:[]});n++});
+ if(!n){if(!items.length)items.push({name:"",orig:"",amount:0,owners:[]});renderItems();return toast("No items found. Use: Item | Price")}$("#paste").value="";renderItems()}
+
+/* ----- save / edit / delete ----- */
+function addExp(){
+ const v=id=>$("#"+id).value,solo=!!trip.solo,isP=v("kind")==="php",cur=isP?"PHP":curNow(),amount=parseFloat(v("amt")),P=trip.people;let rate=1,pv=amount;
+ if(!v("desc").trim()||!(amount>0))return toast("Add a description and an amount.");
  if(!isP){const p0=parseFloat(v("php")),x0=parseFloat(v("rate"));if(last==="php"&&p0>0){pv=p0;rate=p0/amount}else if(x0>0){rate=x0;pv=Math.round(amount*x0*100)/100}else return toast("Add the exchange rate or the converted PHP amount.")}
- const e={id:editId||uid(),code:v("code").trim(),date:v("date"),desc:v("desc").trim(),amount,cur,rate,php:pv,mode:v("mode"),book:v("book").trim(),payer:v("payer"),share};
+ let payer=solo?P[0]:v("payer"),payers=null,share=solo?[P[0]]:shChecked(),alloc=null,itm=null;
+ if(!solo&&$("#mpt").checked){const m={};let s=0;document.querySelectorAll(".pv").forEach(i=>{const x=parseFloat(i.value);if(x>0){m[i.dataset.n]=x;s+=x}});
+  if(!Object.keys(m).length)return toast("Enter how much each payer paid.");if(Math.abs(s-pv)>.05)return toast("The payers' amounts add up to "+fmt(s)+" but the expense is PHP "+fmt(pv)+".");payers=m;payer=Object.keys(m)[0]}
+ const mode=solo?"equal":v("smode");
+ if(mode==="items"){if(!items.length)return toast("Add at least one item.");for(const i of items){if(!i.name.trim()||!(i.amount>0))return toast("Each item needs a name and an amount.");if(!i.owners.length)return toast("Tick who owns \""+i.name+"\".")}
+  itm=items.map(i=>({name:i.name.trim(),orig:(i.orig||"").trim(),amount:i.amount,owners:[...i.owners]}));share=[...new Set(itm.flatMap(i=>i.owners))]}
+ else if(mode==="custom"){if(!share.length)return toast("Tick who shares this expense.");alloc={};let s=0;document.querySelectorAll(".cv").forEach(i=>{const x=parseFloat(i.value);if(x>0){alloc[i.dataset.n]=x;s+=x}});
+  if(Math.abs(s-pv)>.05)return toast("The custom amounts add up to "+fmt(s)+" but the expense is PHP "+fmt(pv)+".");share=Object.keys(alloc)}
+ else if(!share.length)return toast("Tick who shares this expense (use All to tick everyone).");
+ const e={id:editId||uid(),code:v("code").trim(),date:v("date"),desc:v("desc").trim(),amount,cur,rate,php:pv,mode:v("mode"),book:v("book").trim(),link:v("link").trim(),note:v("note").trim(),payer,share};
+ if(payers)e.payers=payers;if(alloc)e.alloc=alloc;if(itm)e.items=itm;
  trip.expenses=editId?trip.expenses.map(x=>x.id===editId?e:x):[...trip.expenses,e];
  save(trip);resetForm();lists();toast("Saved in this browser");
 }
-function resetForm(){editId=null;if(!$("#desc"))return;$("#desc").value="";$("#amt").value="";editCur=null;last="rate";$("#kind").value=trip.cur==="PHP"?"php":"foreign";$("#rate").value="";$("#php").value="";$("#book").value="";kindChange();$("#code").value=nextCode();document.querySelectorAll(".sh").forEach(x=>x.checked=true);$("#ft").textContent="Add expense";$("#sv").textContent="Save expense";$("#cn").style.display="none"}
-function editExp(id){const e=trip.expenses.find(x=>x.id===id);editId=id;
- $("#code").value=e.code;$("#date").value=e.date;$("#desc").value=e.desc;$("#amt").value=e.amount;editCur=e.cur==="PHP"?null:e.cur;last="rate";$("#kind").value=e.cur==="PHP"?"php":"foreign";$("#rate").value=e.cur==="PHP"?"":e.rate;$("#php").value=e.cur==="PHP"?"":r2(ph(e));$("#book").value=e.book||"";kindChange();$("#mode").value=e.mode;$("#payer").value=e.payer;
- document.querySelectorAll(".sh").forEach(x=>x.checked=e.share.includes(x.value));$("#ft").textContent="Edit expense";$("#sv").textContent="Update expense";$("#cn").style.display="";scrollTo({top:0,behavior:"smooth"})}
-async function delExp(id){if(!confirm("Delete this expense?"))return;trip.expenses=trip.expenses.filter(x=>x.id!==id);save(trip);lists()}
+function resetForm(){editId=null;if(!$("#desc"))return;
+ ["desc","amt","rate","php","book","link","note"].forEach(i=>$("#"+i).value="");
+ editCur=null;last="rate";amtAuto=true;items=[];custVals={};payVals={};
+ $("#kind").value=trip.cur==="PHP"?"php":"foreign";
+ if(!trip.solo){$("#mpt").checked=false;mpToggle();$("#smode").value="equal";document.querySelectorAll(".sh").forEach(x=>x.checked=false);$("#shall").checked=false;splitChange()}
+ kindChange();$("#code").value=nextCode();$("#ft").textContent="Add expense";$("#sv").textContent="Save expense";$("#cn").style.display="none"}
+function editExp(id){const e=trip.expenses.find(x=>x.id===id);if(!e)return;editId=id;
+ $("#code").value=e.code;$("#date").value=e.date;$("#desc").value=e.desc;$("#amt").value=e.amount;editCur=e.cur==="PHP"?null:e.cur;last="rate";amtAuto=false;
+ $("#kind").value=e.cur==="PHP"?"php":"foreign";$("#rate").value=e.cur==="PHP"?"":e.rate;$("#php").value=e.cur==="PHP"?"":r2(ph(e));
+ $("#book").value=e.book||"";$("#link").value=e.link||"";$("#note").value=e.note||"";$("#mode").value=e.mode;items=[];custVals={};payVals={};
+ if(!trip.solo){const mp=!!(e.payers&&Object.keys(e.payers).length);$("#mpt").checked=mp;if(mp)for(const n in e.payers)payVals[n]=e.payers[n];$("#payer").value=e.payer;mpToggle();
+  document.querySelectorAll(".sh").forEach(x=>x.checked=e.share.includes(x.value));$("#shall").checked=[...document.querySelectorAll(".sh")].every(x=>x.checked);
+  if(e.alloc)for(const n in e.alloc)custVals[n]=r2(e.alloc[n]);if(e.items)items=e.items.map(i=>({...i,owners:[...i.owners]}));
+  $("#smode").value=e.items?"items":e.alloc?"custom":"equal";splitChange()}
+ kindChange();$("#ft").textContent="Edit expense";$("#sv").textContent="Update expense";$("#cn").style.display="";scrollTo({top:0,behavior:"smooth"})}
+function delExp(id){if(!confirm("Delete this expense?"))return;trip.expenses=trip.expenses.filter(x=>x.id!==id);save(trip);lists()}
 
+/* ----- payments (settle up) ----- */
+function recordPay(i){const s=sugg[i],a=parseFloat($("#pa"+i).value);
+ if(!s||!(a>0)){lists();return toast("Enter the amount that was paid.")}
+ if(a>s[2]+.005){lists();return toast("That is more than the outstanding PHP "+fmt(s[2])+".")}
+ (trip.payments=trip.payments||[]).push({id:uid(),from:s[0],to:s[1],amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
+function undoPay(id){trip.payments=(trip.payments||[]).filter(x=>x.id!==id);save(trip);lists()}
+
+/* ---------- lists ---------- */
 function lists(){
- const ed=canEdit(),ex=[...trip.expenses].sort((a,b)=>(a.code>b.code?1:-1));
- $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th><th>Paid by</th><th>Shared by</th><th class="n">Amount</th><th class="n">PHP</th>${ed?"<th></th>":""}</tr>${ex.map(e=>`<tr><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div></td><td>${esc(e.payer)}</td><td class="small">${e.share.length===trip.people.length?"Everyone":e.share.map(esc).join(", ")}</td><td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td>${ed?`<td class="n"><button class="x" title="Edit" onclick="editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="delExp('${e.id}')">Delete</button></td>`:""}</tr>`).join("")}</table></div>
+ const ex=[...trip.expenses].sort(byCode),solo=!!trip.solo,P=trip.people;
+ const payTxt=e=>{const m=payersOf(e),k=Object.keys(m);return k.length>1?k.map(n=>`${esc(n)} <span class="small">${fmt(m[n])}</span>`).join("<br>"):esc(k[0])};
+ const shTxt=e=>e.items?"By items: "+e.share.map(esc).join(", "):e.alloc?"Custom: "+e.share.map(esc).join(", "):(e.share.length===P.length?"Everyone":e.share.map(esc).join(", "));
+ $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th><th></th></tr>${ex.map(e=>`<tr><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td><td class="n"><button class="x" onclick="editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
  <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b></p>`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
- const c=calc(trip.expenses),st=settle(c);
- $("#sum").innerHTML=`<div class="wrap"><table><tr><th>Participant</th><th class="n">Paid (PHP)</th><th class="n">Share (PHP)</th><th class="n">Balance</th></tr>${trip.people.map(n=>{const b=c[n].paid-c[n].owes;return`<tr><td>${esc(n)}</td><td class="n">${fmt(c[n].paid)}</td><td class="n">${fmt(c[n].owes)}</td><td class="n ${b>=0?"pos":"neg"}">${b>=0?"+":"−"}${fmt(Math.abs(b))}</td></tr>`}).join("")}</table></div>
- <h3 style="font-size:16px;margin:14px 0 6px">Settle up</h3>${st.length?st.map(s=>`<div>${esc(s[0])} pays ${esc(s[1])} <b>PHP ${fmt(s[2])}</b></div>`).join(""):`<p class="empty">Everyone is even.</p>`}`;
- $("#rc").innerHTML=!showRc?`<button onclick="genRc()">Generate receipt</button>`:`<p class="small" style="margin:0 0 8px">Tick what to include. Each ticked receipt below is printable or downloadable.</p>
- <label>Receipts</label><div class="chips">${[["_t","Total (everyone)"],...trip.people.map(p=>[p,p])].map(([k,l])=>`<label class="chip"><input type="checkbox" ${exclWho.has(k)?"":"checked"} onchange="tog(exclWho,this.dataset.k)" data-k="${esc(k)}">${esc(l)}</label>`).join("")}</div>
- <label style="margin-top:10px">Expenses to include</label><div class="chips">${ex.map(e=>`<label class="chip"><input type="checkbox" ${exclEx.has(e.id)?"":"checked"} onchange="tog(exclEx,this.dataset.k)" data-k="${e.id}">${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<span class="empty">None yet</span>`}</div>
- <div class="row" style="margin-top:12px"><button onclick="print()">Print / save as PDF</button><button class="ghost" onclick="png()">Download as image</button><button class="ghost" onclick="hideRc()">Hide receipt</button></div>`;
- $("#slips").innerHTML=showRc?slips():"";
+ const c=calc(trip.expenses);
+ if(solo){$("#ov").innerHTML=`<p style="margin:0"><b>Total spent: PHP ${fmt(c[P[0]].share)}</b></p>`}
+ else{const T={recv:0,share:0,paid:0,out:0};P.forEach(n=>{for(const k in T)T[k]+=c[n][k]});
+  $("#ov").innerHTML=`<div class="wrap"><table><tr><th>Traveler</th><th class="n">Receivable</th><th class="n">Share</th><th class="n">Paid Amount</th><th class="n">Outstanding Balance</th></tr>${P.map(n=>`<tr><td>${esc(n)}</td><td class="n">${fmt(c[n].recv)}</td><td class="n">${fmt(c[n].share)}</td><td class="n">${fmt(c[n].paid)}</td><td class="n">${neg(c[n].out)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="n"><b>${fmt(T.recv)}</b></td><td class="n"><b>${fmt(T.share)}</b></td><td class="n"><b>${fmt(T.paid)}</b></td><td class="n"><b>${neg(T.out)}</b></td></tr></table></div>
+  <p class="small" style="margin:8px 0 0">Receivable is what a traveler paid beyond their own share. Outstanding Balance in red brackets means money is still owed to that traveler.</p>`;
+  sugg=settle(c);const pay=trip.payments||[];
+  $("#st").innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">To pay</h3>${sugg.length?sugg.map((s,i)=>`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" onchange="recordPay(${i})">${esc(s[0])} pays ${esc(s[1])}</label><input id="pa${i}" type="number" step="any" inputmode="decimal" value="${r2(s[2])}"></div>`).join(""):`<p class="empty">Everyone is settled.</p>`}
+  <h3 style="font-size:16px;margin:14px 0 6px">Paid and settled</h3>${pay.length?pay.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):`<p class="empty">Nothing yet. Tick a payment above once it has been paid. You can change the amount for part payments.</p>`}`}
+ $("#rc").innerHTML=showRc?`<div class="row"><button onclick="print()">Print / save as PDF</button><button class="ghost" onclick="png()">Download as image</button><button class="ghost" onclick="openM()">Edit selection</button><button class="ghost" onclick="hideRc()">Hide receipt</button></div>`:`<button onclick="openM()">Generate receipt</button>`;
+ $("#slips").innerHTML=showRc?slips():"";fit();
 }
-function genRc(){showRc=true;lists();$("#slips").scrollIntoView({behavior:"smooth",block:"start"})}
+
+/* ---------- receipts ---------- */
 function hideRc(){showRc=false;lists()}
-function tog(set,k){set.has(k)?set.delete(k):set.add(k);lists()}
+function closeM(){$("#mdl").classList.remove("on")}
+function selAll(cls,c){document.querySelectorAll("."+cls).forEach(x=>x.checked=c)}
+function openM(){const P=trip.people,ex=[...trip.expenses].sort(byCode),solo=!!trip.solo;
+ const ckw=(k,l)=>`<label class="ck"><input type="checkbox" class="cw" data-k="${esc(k)}" ${exclWho.has(k)?"":"checked"}>${esc(l)}</label>`;
+ const per=n=>{const mine=ex.filter(e=>(shares(e)[n]||0)>0||payersOf(e)[n]);return`<details><summary>${esc(n)}</summary>${mine.map(e=>`<label class="ck"><input type="checkbox" class="cp" data-n="${esc(n)}" data-k="${e.id}" ${exclPer[n]&&exclPer[n].has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses.</p>`}</details>`};
+ $("#mc").innerHTML=`<h2 style="margin-bottom:10px">Generate receipt</h2>
+ <details open><summary>Travelers</summary><label class="ck"><input type="checkbox" checked onchange="selAll('cw',this.checked)">Select all</label>${solo?"":ckw("_t","Total (everyone)")}${P.map(n=>ckw(n,n)).join("")}</details>
+ <details><summary>Expenses included for everyone</summary><label class="ck"><input type="checkbox" checked onchange="selAll('ce',this.checked)">Select all</label>${ex.map(e=>`<label class="ck"><input type="checkbox" class="ce" data-k="${e.id}" ${exclEx.has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses yet.</p>`}</details>
+ ${solo?"":`<details><summary>Include or exclude per traveler</summary>${P.map(per).join("")}</details>`}
+ <div class="row" style="margin-top:12px"><button onclick="applyRc()">Show receipts</button><button class="ghost" onclick="closeM()">Cancel</button></div>`;
+ $("#mdl").classList.add("on")}
+function applyRc(){exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];
+ document.querySelectorAll(".cw").forEach(x=>{if(!x.checked)exclWho.add(x.dataset.k)});
+ document.querySelectorAll(".ce").forEach(x=>{if(!x.checked)exclEx.add(x.dataset.k)});
+ document.querySelectorAll(".cp").forEach(x=>{if(!x.checked)(exclPer[x.dataset.n]=exclPer[x.dataset.n]||new Set()).add(x.dataset.k)});
+ showRc=true;closeM();lists();$("#slips").scrollIntoView({behavior:"smooth",block:"start"})}
+const expFor=n=>trip.expenses.filter(e=>!exclEx.has(e.id)&&!(exclPer[n]&&exclPer[n].has(e.id))).sort(byCode);
 function head(t){return`<h3>${esc(trip.name)}</h3><div class="c">${esc(trip.country)} · ${esc(t)}</div><div class="c">${dTxt(trip)||new Date().toLocaleDateString("en-GB")}</div><hr>`}
-function slips(){
- const ex=trip.expenses.filter(e=>!exclEx.has(e.id)).sort((a,b)=>a.code>b.code?1:-1),out=[];
- if(!exclWho.has("_t"))out.push(totalSlip(ex));
- trip.people.filter(n=>!exclWho.has(n)).forEach(n=>out.push(personSlip(n,ex)));
- return out.join("")||`<p class="empty">Tick at least one receipt.</p>`;
-}
-function personSlip(n,ex){
- const mine=ex.filter(e=>e.share.includes(n)),c=calc(ex)[n],tot=c.owes;
- return`<div class="slip">${head("Receipt for "+esc(n))}${mine.map(e=>{const k=e.share.length;return`<div class="ln"><span>${esc(e.desc)}${e.book?`<small>via ${esc(e.book)}</small>`:""}</span><span>${fmt(ph(e)/k)}</span></div>`}).join("")||`<div class="c">No shared expenses</div>`}<hr>
- <div class="ln tot"><span>Your share</span><span>PHP ${fmt(tot)}</span></div><div class="ln"><span>You paid</span><span>PHP ${fmt(c.paid)}</span></div>
- <div class="ln tot"><span>${c.paid>=tot?"You get back":"You owe"}</span><span>PHP ${fmt(Math.abs(c.paid-tot))}</span></div><hr><div class="c">Thank you!</div></div>`;
-}
-function totalSlip(ex){
- const c=calc(ex),tot=ex.reduce((s,e)=>s+ph(e),0),st=settle(c);
- return`<div class="slip">${head("Trip receipt")}${ex.map(e=>`<div class="ln"><span>${esc(e.desc)}${e.book?`<small>via ${esc(e.book)}</small>`:""}</span><span>${fmt(ph(e))}</span></div>`).join("")||`<div class="c">No expenses</div>`}<hr>
- <div class="ln tot"><span>TOTAL</span><span>PHP ${fmt(tot)}</span></div><hr>
- ${trip.people.map(n=>`<div class="ln"><span>${esc(n)}<small>paid ${fmt(c[n].paid)}</small></span><span>share ${fmt(c[n].owes)}</span></div>`).join("")}
- ${st.length?`<hr>${st.map(s=>`<div>${esc(s[0])} → ${esc(s[1])}: ${fmt(s[2])}</div>`).join("")}`:""}<hr><div class="c">Thank you!</div></div>`;
-}
+function lineItems(e,n){const sh=shares(e);if(!((sh[n]||0)>0))return[];
+ if(e.items&&e.items.length){const tot=ph(e),sum=e.items.reduce((s,i)=>s+i.amount,0)||1,r=[];e.items.forEach(i=>{const ow=i.owners.length?i.owners:e.share;if(ow.includes(n))r.push({t:e.desc+": "+i.name,a:i.amount/sum*tot/ow.length})});return r}
+ return[{t:e.desc,a:sh[n]}]}
+const ln=(t,b,a)=>`<div class="ln fit"><span>${esc(t)}${b?" - "+esc(b):""}</span><span>${fmt(a)}</span></div>`;
+const tb=c=>`<div class="ln"><span>Share</span><span>PHP ${fmt(c.share)}</span></div><div class="ln"><span>Amount Paid</span><span>PHP ${fmt(c.paid)}</span></div><div class="ln tot"><span>Outstanding Balance</span><span>${c.out<-.005?`<span class="neg">(PHP ${fmt(-c.out)})</span>`:"PHP "+fmt(Math.abs(c.out)<.005?0:c.out)}</span></div>`;
+function slips(){const out=[],gx=trip.expenses.filter(e=>!exclEx.has(e.id)).sort(byCode);
+ if(!trip.solo&&!exclWho.has("_t"))out.push(totalSlip(gx));
+ trip.people.filter(n=>!exclWho.has(n)).forEach(n=>out.push(personSlip(n,expFor(n))));
+ return out.join("")||`<p class="empty">No receipts selected.</p>`}
+function personSlip(n,ex){const c=calc(ex)[n],lines=[];ex.forEach(e=>lineItems(e,n).forEach(l=>lines.push(ln(l.t,e.book,l.a))));
+ return`<div class="slip">${head("Receipt")}<div class="nm">${esc(n)}</div><hr>${lines.join("")||`<div class="c">No shared expenses</div>`}<hr>${tb(c)}<hr><div class="c">Thank you!</div></div>`}
+function totalSlip(ex){const c=calc(ex),tot=ex.reduce((s,e)=>s+ph(e),0);
+ return`<div class="slip">${head("Trip receipt")}${ex.map(e=>ln(e.desc,e.book,ph(e))).join("")||`<div class="c">No expenses</div>`}<hr><div class="ln tot"><span>TOTAL</span><span>PHP ${fmt(tot)}</span></div><hr>
+ ${trip.people.map(n=>`<div class="nm">${esc(n)}</div>${tb(c[n])}<hr>`).join("")}<div class="c">Thank you!</div></div>`}
+function fit(){document.querySelectorAll(".slip .fit").forEach(el=>{let fs=13,g=0;el.style.fontSize=fs+"px";while(el.scrollWidth>el.clientWidth+1&&fs>7&&g++<40){fs-=.5;el.style.fontSize=fs+"px"}})}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
 async function png(){
  const nodes=[...document.querySelectorAll(".slip")];if(!nodes.length)return toast("Nothing to download.");
- for(let i=0;i<nodes.length;i++){const cv=await html2canvas(nodes[i],{backgroundColor:"#ffffff",scale:2});const a=document.createElement("a");a.download=`${trip.name.replace(/\W+/g,"-")}-receipt-${i+1}.png`;a.href=cv.toDataURL("image/png");a.click()}
+ for(let i=0;i<nodes.length;i++){const cv=await html2canvas(nodes[i],{backgroundColor:"#ffffff",scale:2});const a=document.createElement("a");a.download=`${tripCode(trip)}-receipt-${i+1}.png`;a.href=cv.toDataURL("image/png");a.click()}
 }
-
-/* ---------- start ---------- */
 topbar();home();
 </script>
 </body></html>
