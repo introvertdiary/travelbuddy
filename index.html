@@ -60,6 +60,7 @@ details details{margin:8px 0 0;background:#fff}
 a.btn{display:inline-block;text-decoration:none;background:var(--lilac);color:var(--deep);border-radius:10px;padding:9px 16px;font-weight:700;font-size:15px}a.btn:hover{background:var(--orchid)}
 .ok{color:var(--ok);font-weight:700}
 #exl tr[onclick]{cursor:pointer}#exl tr[onclick]:hover td{background:#faf5ff}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin:0}.dl dt{color:var(--mute)}.dl dd{margin:0;text-align:right;overflow-wrap:anywhere}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -326,16 +327,26 @@ function lists(){
 }
 
 /* ---------- receipts ---------- */
-let expDebts=[],mdlExp=null;
-function openExp(id){mdlMode="ex";mdlExp=id;renderExp();$("#mdl").classList.add("on")}
+let expDebts=[],mdlExp=null,expSettle=false;
+function openExp(id){mdlMode="ex";mdlExp=id;expSettle=false;renderExp();$("#mdl").classList.add("on")}
+function toggleExpSettle(){expSettle=!expSettle;renderExp();if(expSettle){const el=$("#xs");if(el)el.scrollIntoView({behavior:"smooth",block:"nearest"})}}
 function renderExp(){const e=trip.expenses.find(x=>x.id===mdlExp);if(!e){closeM();return}
- const items=expStatus()[e.id].items,pays=(trip.payments||[]).filter(x=>x.eid===e.id);expDebts=items;
- $("#mc").innerHTML=`<h2 style="margin-bottom:4px">${esc(e.desc)}</h2><div class="small" style="margin-bottom:12px"><span class="code">${esc(e.code)}</span> PHP ${fmt(ph(e))} · paid by ${Object.keys(payersOf(e)).map(esc).join(", ")}</div>
- <h3 style="font-size:16px;margin-bottom:6px">Settle this expense</h3>
+ const q=expStatus()[e.id],items=q.items,pays=(trip.payments||[]).filter(x=>x.eid===e.id),sh=shares(e),pm=payersOf(e);expDebts=items;
+ const row=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+ const status=q.d<.005?"Nothing owed":q.u<.005?`<span class="ok">✓ Paid</span>`:`PHP ${fmt(q.u)} outstanding`;
+ const settle=expSettle?`<div id="xs" class="blk"><h3 style="font-size:16px;margin-bottom:6px">Settle payment</h3>
  ${items.length?items.map((x,i)=>{const paid=x.amt-x.rem,done=x.rem<.005;return`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" ${done?"checked disabled":`onchange="recordExp(${i})"`}><span>${esc(x.from)} pays ${esc(x.to)} <span class="small">owes ${fmt(x.amt)}${paid>.005?", paid "+fmt(paid):""}</span></span></label>${done?`<span class="ok" style="flex:none">✓ Paid</span>`:`<input id="ea${i}" type="number" step="any" inputmode="decimal" value="${r2(x.rem)}">`}</div>`}).join(""):`<p class="empty">Nobody owes anything on this expense.</p>`}
  <p class="small" style="margin:6px 0 0">Change the amount first for a part payment, then tick it.</p>
- ${pays.length?`<h3 style="font-size:16px;margin:14px 0 6px">Payments recorded here</h3>`+pays.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):""}
- <div class="row" style="margin-top:14px"><button class="ghost" onclick="closeM()">Close</button></div>`}
+ ${pays.length?`<h3 style="font-size:16px;margin:14px 0 6px">Payments recorded here</h3>`+pays.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):""}</div>`:"";
+ $("#mc").innerHTML=`<h2 style="margin-bottom:4px">${esc(e.desc)}</h2><div class="small" style="margin-bottom:12px"><span class="code">${esc(e.code)}</span></div>
+ <dl class="dl">${row("Date",esc(e.date))}${row("Mode of payment",esc(e.mode))}${e.book?row("Booked via",esc(e.book)):""}
+ ${row("Amount",e.cur==="PHP"?`PHP ${fmt(e.amount)}`:`${esc(e.cur)} ${fmt(e.amount)} @ ${rt(e.rate)}`)}${e.cur==="PHP"?"":row("In PHP",fmt(ph(e)))}
+ ${row("Paid by",Object.keys(pm).map(n=>`${esc(n)} ${fmt(pm[n])}`).join("<br>"))}
+ ${row("Shared by",Object.keys(sh).map(n=>`${esc(n)} ${fmt(sh[n])}`).join("<br>"))}
+ ${e.items&&e.items.length?row("Items",e.items.map(i=>`${esc(i.name)}${i.orig?" ("+esc(i.orig)+")":""} ${fmt(i.amount)} <span class="small">${i.owners.map(esc).join(", ")}</span>`).join("<br>")):""}
+ ${e.note?row("Note",esc(e.note)):""}${safeUrl(e.link)?row("Receipt",`<a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer">Open link</a>`):""}
+ ${trip.solo?"":row("Status",status)}</dl>${trip.solo?"":settle}
+ <div class="row" style="margin-top:14px">${trip.solo?"":`<button onclick="toggleExpSettle()">${expSettle?"Hide settlement":"Settle payment"}</button>`}<button class="ghost" onclick="closeM()">Close</button></div>`}
 function recordExp(i){const x=expDebts[i],a=parseFloat($("#ea"+i).value);
  if(!x||!(a>0)){lists();return toast("Enter the amount that was paid.")}
  if(a>x.rem+.005){lists();return toast("That is more than the outstanding PHP "+fmt(x.rem)+".")}
