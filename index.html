@@ -57,6 +57,8 @@ details details{margin:8px 0 0;background:#fff}
 @media(max-width:640px){.g4 input,.g4 select{font-size:12px;padding:9px 6px;border-radius:9px}.g4 label{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lx{display:none}.g4 input[type=date]{padding-left:3px;padding-right:1px;font-size:10.5px}.crow input{width:104px}}
 @media(max-width:380px){.g4 input,.g4 select{font-size:11px;padding:8px 4px}.g4 label{font-size:9.5px}}
 .plus{background:none;color:var(--violet);border:1.5px dashed var(--orchid);padding:3px 12px;font-weight:400;font-size:13px}.plus:hover{background:var(--lilac)}
+a.btn{display:inline-block;text-decoration:none;background:var(--lilac);color:var(--deep);border-radius:10px;padding:9px 16px;font-weight:700;font-size:15px}a.btn:hover{background:var(--orchid)}
+.ok{color:var(--ok);font-weight:700}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -95,7 +97,8 @@ function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";cl
 /* ---------- storage / files ---------- */
 function save(t){try{localStorage.setItem("ps:"+t.id,JSON.stringify(t))}catch(e){toast("Could not save in this browser. Download your trip file now.")}}
 const allTrips=()=>Object.keys(localStorage).filter(k=>k.startsWith("ps:")).map(k=>{try{return JSON.parse(localStorage[k])}catch{return null}}).filter(Boolean);
-function topbar(){$("#auth").innerHTML=`<button class="ghost" onclick="$('#fi').click()">Open saved file</button>`}
+const FB_URL="https://introvertdiary.github.io/travelbuddy/Financial%20Buddy.html";
+function topbar(){$("#auth").innerHTML=`<a class="btn" href="${FB_URL}" target="_blank" rel="noopener noreferrer">Financial Buddy</a><button class="ghost" onclick="$('#fi').click()">Open saved file</button>`}
 const dTxt=t=>t.start&&t.end?new Date(t.start+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" – "+new Date(t.end+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";
 function tripCode(t){if(!t.start||!t.end)return t.cc+"-"+(String(t.name).replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")||"trip");const a=t.start.split("-"),b=t.end.split("-");return String(t.cc).replace(/[^\w]/g,"")+a[1]+a[2]+"-"+(a[1]===b[1]?b[2]:b[1]+b[2])}
 function defDate(){let d=today();if(trip&&trip.start&&d<trip.start)d=trip.start;if(trip&&trip.end&&d>trip.end)d=trip.end;return d}
@@ -154,7 +157,8 @@ function home(){
  $("#app").innerHTML=HERO+form+`<section><h2><svg class="plane-sm"><use href="#plane"/></svg> Your trips</h2>
   <div class="row" style="margin-bottom:8px"><button class="ghost" onclick="exportAll()">Download all trips (one file)</button><span class="small">Open it later with "Open saved file". It restores every trip at once.</span></div>
   ${list.length?list.map(t=>`<div class="row sp" style="padding:8px 0;border-bottom:1px solid var(--sand)"><div><b>${esc(t.name)}</b> <span class="tag">${esc(t.country)} · ${esc(t.cur)}${t.solo?" · solo":""}</span><div class="small">${dTxt(t)?esc(dTxt(t))+" · ":""}${t.people.map(esc).join(", ")}</div></div><div class="row"><button class="ghost" onclick="openTrip('${t.id}')">Open</button><button class="ghost" onclick="exportById('${t.id}')">Download</button><button class="x" onclick="delTrip('${t.id}')">Delete</button></div></div>`).join(""):`<p class="empty">No trips yet. Start one above, or open a saved file.</p>`}
-  <p class="small" style="margin:12px 0 0">Trips are saved in this browser only. Download a file to back it up or continue on another device.</p></section>`;
+  <p class="small" style="margin:12px 0 0">Trips are saved in this browser only. Download a file to back it up or continue on another device.</p></section>
+  <section><h2>Financial Buddy</h2><p style="margin:0 0 10px">Your Financial Buddy site. It opens in a new tab.</p><a class="btn" href="${FB_URL}" target="_blank" rel="noopener noreferrer">Open Financial Buddy</a></section>`;
 }
 function pickC(){const [,,cur]=$("#tc").value.split("|");$("#tcur").value=cur}
 function soloChange(){const s=$("#solo").checked;$("#tpl").textContent=s?"Your name":"Participants, separated by commas (include yourself)";$("#tp").placeholder=s?"Your name":"Names, separated by commas"}
@@ -294,13 +298,27 @@ function addPay(){const f=$("#pf").value,t=$("#pt").value,a=parseFloat($("#pm").
  (trip.payments=trip.payments||[]).push({id:uid(),from:f,to:t,amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
 function undoPay(id){trip.payments=(trip.payments||[]).filter(x=>x.id!==id);save(trip);lists()}
 
+/* ---------- per-expense paid status ---------- */
+function expStatus(){const out=Object.create(null),debts=[];
+ const list=[...trip.expenses].sort((a,b)=>a.date===b.date?byCode(a,b):(a.date>b.date?1:-1));
+ list.forEach(e=>{const T=ph(e),sh=shares(e),pm=payersOf(e);out[e.id]={d:0,u:0};
+  for(const s in sh){if(!(sh[s]>0))continue;for(const n in pm){if(n===s||!(pm[n]>0))continue;const a=sh[s]*pm[n]/T;debts.push({id:e.id,from:s,to:n,amt:a,rem:a});out[e.id].d+=a}}});
+ const pair=(f,t)=>debts.filter(x=>x.from===f&&x.to===t);
+ const apply=(arr,amt)=>{for(const x of arr){if(amt<=0)break;const u=Math.min(x.rem,amt);x.rem-=u;amt-=u}};
+ const done=new Set();
+ debts.forEach(x=>{const k=[x.from,x.to].sort().join("\u0001");if(done.has(k))return;done.add(k);
+  const ab=pair(x.from,x.to),ba=pair(x.to,x.from),o=Math.min(ab.reduce((s,y)=>s+y.rem,0),ba.reduce((s,y)=>s+y.rem,0));if(o>0){apply(ab,o);apply(ba,o)}});
+ (trip.payments||[]).forEach(p=>apply(pair(p.from,p.to),p.amount));
+ debts.forEach(x=>out[x.id].u+=x.rem);return out}
 /* ---------- lists ---------- */
 function lists(){
  const ex=[...trip.expenses].sort(byCode),solo=!!trip.solo,P=trip.people;
  const payTxt=e=>{const m=payersOf(e),k=Object.keys(m);return k.length>1?k.map(n=>`${esc(n)} <span class="small">${fmt(m[n])}</span>`).join("<br>"):esc(k[0])};
  const shTxt=e=>e.items?"By items: "+e.share.map(esc).join(", "):e.alloc?"Custom: "+e.share.map(esc).join(", "):(e.share.length===P.length?"Everyone":e.share.map(esc).join(", "));
- $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th><th></th></tr>${ex.map(e=>`<tr><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td><td class="n"><button class="x" onclick="editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
- <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b></p>`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
+ const xs=solo?null:expStatus();
+ const stCell=e=>{const q=xs[e.id];return q.d<.005?`<span class="small">–</span>`:q.u<.005?`<span class="ok">✓ Paid</span>`:`${fmt(q.u)}<div class="small">${q.u<q.d-.005?"Partial":"Unpaid"}</div>`};
+ $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th>${solo?"":`<th class="n">Outstanding</th>`}<th></th></tr>${ex.map(e=>`<tr><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td>${solo?"":`<td class="n">${stCell(e)}</td>`}<td class="n"><button class="x" onclick="editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
+ <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b></p>${solo?"":`<p class="small" style="text-align:right;margin:4px 0 0">Outstanding is what is still unpaid on that expense. Recorded payments go to the oldest expense first, and amounts two travelers owe each other are offset.</p>`}`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
  const c=calc(trip.expenses);
  if(solo){$("#ov").innerHTML=`<p style="margin:0"><b>Total spent: PHP ${fmt(c[P[0]].share)}</b></p>`}
  else{const T={recv:0,share:0,paid:0,out:0};P.forEach(n=>{for(const k in T)T[k]+=c[n][k]});
