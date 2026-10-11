@@ -59,6 +59,7 @@ details details{margin:8px 0 0;background:#fff}
 .plus{background:none;color:var(--violet);border:1.5px dashed var(--orchid);padding:3px 12px;font-weight:400;font-size:13px}.plus:hover{background:var(--lilac)}
 a.btn{display:inline-block;text-decoration:none;background:var(--lilac);color:var(--deep);border-radius:10px;padding:9px 16px;font-weight:700;font-size:15px}a.btn:hover{background:var(--orchid)}
 .ok{color:var(--ok);font-weight:700}
+#exl tr[onclick]{cursor:pointer}#exl tr[onclick]:hover td{background:#faf5ff}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -110,7 +111,7 @@ function delTrip(id){if(!confirm("Delete this trip from this browser? Download i
 function norm(t){
  if(!t||typeof t.id!=="string"||!/^[\w-]{4,40}$/.test(t.id)||!t.name||!t.cc||!t.cur||!Array.isArray(t.people)||!t.people.length||!Array.isArray(t.expenses))throw 0;
  t.people=t.people.map(String);
- t.payments=(Array.isArray(t.payments)?t.payments:[]).map(x=>({id:String(x.id||uid()).replace(/[^\w-]/g,"")||uid(),from:String(x.from),to:String(x.to),amount:Number(x.amount),date:String(x.date||"")})).filter(x=>x.amount>0);
+ t.payments=(Array.isArray(t.payments)?t.payments:[]).map(x=>({id:String(x.id||uid()).replace(/[^\w-]/g,"")||uid(),from:String(x.from),to:String(x.to),amount:Number(x.amount),date:String(x.date||""),...(x.eid?{eid:String(x.eid).replace(/[^\w-]/g,"")}:{})})).filter(x=>x.amount>0);
  t.expenses.forEach(e=>{e.amount=Number(e.amount);e.rate=Number(e.rate);if(e.php!=null)e.php=Number(e.php);
   if(!(e.amount>0)||!(e.rate>0)||(e.php!=null&&!(e.php>0))||!Array.isArray(e.share)||!/^[\w-]+$/.test(String(e.id)))throw 0;
   e.id=String(e.id);e.share=e.share.map(String);e.payer=String(e.payer||t.people[0]);
@@ -137,7 +138,7 @@ function payersOf(e){const o=Object.create(null);if(e.payers&&Object.keys(e.paye
 function calc(list){const p=Object.create(null);trip.people.forEach(n=>p[n]={recv:0,share:0,front:0,cover:0,sp:0,sr:0,paid:0,out:0});
  list.forEach(e=>{const pm=payersOf(e),sh=shares(e);for(const n in pm)if(p[n]){p[n].front+=pm[n];p[n].cover+=Math.min(pm[n],sh[n]||0)}for(const n in sh)if(p[n])p[n].share+=sh[n]});
  (trip.payments||[]).forEach(x=>{if(p[x.from])p[x.from].sp+=x.amount;if(p[x.to])p[x.to].sr+=x.amount});
- for(const n in p){const q=p[n];q.paid=q.sp;q.recv=Math.max(q.front-q.cover,0);q.out=q.share-q.front-q.sp+q.sr}return p}
+ for(const n in p){const q=p[n];q.paid=q.sp;q.recv=Math.max(q.front-q.sr,0);q.out=q.share-q.sp}return p}
 function settle(c){const d=[],cr=[];for(const n in c){const v=c[n].out;if(v>.005)d.push([n,v]);else if(v<-.005)cr.push([n,-v])}
  const r=[];let i=0,j=0;while(i<d.length&&j<cr.length){const m=Math.min(d[i][1],cr[j][1]);r.push([d[i][0],cr[j][0],m]);d[i][1]-=m;cr[j][1]-=m;if(d[i][1]<.005)i++;if(cr[j][1]<.005)j++}return r}
 function nextCode(){const re=new RegExp("^"+trip.cc+"(\\d+)$");const m=Math.max(0,...trip.expenses.map(e=>(re.exec(e.code)||[0,0])[1]*1));return trip.cc+String(m+1).padStart(3,"0")}
@@ -289,27 +290,22 @@ function editExp(id){const e=trip.expenses.find(x=>x.id===id);if(!e)return;editI
 function delExp(id){if(!confirm("Delete this expense?"))return;trip.expenses=trip.expenses.filter(x=>x.id!==id);save(trip);lists()}
 
 /* ----- payments (settle up) ----- */
-function recordPay(i){const s=sugg[i],a=parseFloat($("#pa"+i).value);
- if(!s||!(a>0)){lists();return toast("Enter the amount that was paid.")}
- if(a>s[2]+.005){lists();return toast("That is more than the outstanding PHP "+fmt(s[2])+".")}
- (trip.payments=trip.payments||[]).push({id:uid(),from:s[0],to:s[1],amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
 function addPay(){const f=$("#pf").value,t=$("#pt").value,a=parseFloat($("#pm").value);
- if(f===t)return toast("Pick two different travelers.");if(!(a>0))return toast("Enter the amount that was paid.");
+ if(!(a>0))return toast("Enter the amount that was paid.");
  (trip.payments=trip.payments||[]).push({id:uid(),from:f,to:t,amount:Math.round(a*100)/100,date:today()});save(trip);lists();toast("Payment recorded")}
 function undoPay(id){trip.payments=(trip.payments||[]).filter(x=>x.id!==id);save(trip);lists()}
 
 /* ---------- per-expense paid status ---------- */
 function expStatus(){const out=Object.create(null),debts=[];
  const list=[...trip.expenses].sort((a,b)=>a.date===b.date?byCode(a,b):(a.date>b.date?1:-1));
- list.forEach(e=>{const T=ph(e),sh=shares(e),pm=payersOf(e);out[e.id]={d:0,u:0};
+ list.forEach(e=>{const T=ph(e),sh=shares(e),pm=payersOf(e);out[e.id]={d:0,u:0,items:[]};
   for(const s in sh){if(!(sh[s]>0))continue;for(const n in pm){if(n===s||!(pm[n]>0))continue;const a=sh[s]*pm[n]/T;debts.push({id:e.id,from:s,to:n,amt:a,rem:a});out[e.id].d+=a}}});
  const pair=(f,t)=>debts.filter(x=>x.from===f&&x.to===t);
  const apply=(arr,amt)=>{for(const x of arr){if(amt<=0)break;const u=Math.min(x.rem,amt);x.rem-=u;amt-=u}};
- const done=new Set();
- debts.forEach(x=>{const k=[x.from,x.to].sort().join("\u0001");if(done.has(k))return;done.add(k);
-  const ab=pair(x.from,x.to),ba=pair(x.to,x.from),o=Math.min(ab.reduce((s,y)=>s+y.rem,0),ba.reduce((s,y)=>s+y.rem,0));if(o>0){apply(ab,o);apply(ba,o)}});
- (trip.payments||[]).forEach(p=>apply(pair(p.from,p.to),p.amount));
- debts.forEach(x=>out[x.id].u+=x.rem);return out}
+ const pays=trip.payments||[];
+ pays.filter(p=>p.eid).forEach(p=>apply(debts.filter(x=>x.id===p.eid&&x.from===p.from&&x.to===p.to),p.amount));
+ pays.filter(p=>!p.eid).forEach(p=>apply(pair(p.from,p.to),p.amount));
+ debts.forEach(x=>{out[x.id].u+=x.rem;out[x.id].items.push(x)});return out}
 /* ---------- lists ---------- */
 function lists(){
  const ex=[...trip.expenses].sort(byCode),solo=!!trip.solo,P=trip.people;
@@ -317,25 +313,47 @@ function lists(){
  const shTxt=e=>e.items?"By items: "+e.share.map(esc).join(", "):e.alloc?"Custom: "+e.share.map(esc).join(", "):(e.share.length===P.length?"Everyone":e.share.map(esc).join(", "));
  const xs=solo?null:expStatus();
  const stCell=e=>{const q=xs[e.id];return q.d<.005?`<span class="small">–</span>`:q.u<.005?`<span class="ok">✓ Paid</span>`:`${fmt(q.u)}<div class="small">${q.u<q.d-.005?"Partial":"Unpaid"}</div>`};
- $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th>${solo?"":`<th class="n">Outstanding</th>`}<th></th></tr>${ex.map(e=>`<tr><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td>${solo?"":`<td class="n">${stCell(e)}</td>`}<td class="n"><button class="x" onclick="editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
- <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b></p>${solo?"":`<p class="small" style="text-align:right;margin:4px 0 0">Outstanding is what is still unpaid on that expense. Recorded payments go to the oldest expense first, and amounts two travelers owe each other are offset.</p>`}`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
+ $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th>${solo?"":`<th class="n">Outstanding</th>`}<th></th></tr>${ex.map(e=>`<tr${solo?"":` onclick="openExp('${e.id}')" title="Tap to settle"`}><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n"><b>${fmt(ph(e))}</b></td>${solo?"":`<td class="n">${stCell(e)}</td>`}<td class="n"><button class="x" onclick="event.stopPropagation();editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="event.stopPropagation();delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
+ <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b></p>${solo?"":`<p class="small" style="text-align:right;margin:4px 0 0">Tap an expense to settle it. Outstanding is what is still unpaid on that expense. Payments recorded under Settle payment go to the oldest expense first. Nothing is deducted automatically.</p>`}`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
  const c=calc(trip.expenses);
  if(solo){$("#ov").innerHTML=`<p style="margin:0"><b>Total spent: PHP ${fmt(c[P[0]].share)}</b></p>`}
  else{const T={recv:0,share:0,paid:0,out:0};P.forEach(n=>{for(const k in T)T[k]+=c[n][k]});
   $("#ov").innerHTML=`<div class="wrap"><table><tr><th>Traveler</th><th class="n">Receivable</th><th class="n">Share</th><th class="n">Paid Amount</th><th class="n">Outstanding Balance</th></tr>${P.map(n=>`<tr><td>${esc(n)}</td><td class="n">${fmt(c[n].recv)}</td><td class="n">${fmt(c[n].share)}</td><td class="n">${fmt(c[n].paid)}</td><td class="n">${neg(c[n].out)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="n"><b>${fmt(T.recv)}</b></td><td class="n"><b>${fmt(T.share)}</b></td><td class="n"><b>${fmt(T.paid)}</b></td><td class="n">–</td></tr></table></div>
-  <p class="small" style="margin:8px 0 0">Paid Amount is only what has been settled (payments you tick below, full or partial). Money a traveler paid upfront is not counted there; it shows as Receivable, the amount others owe them. Outstanding Balance is what is left to settle, and red brackets mean money is still owed to that traveler.</p>`;
-  $("#st").innerHTML=`<button onclick="openSettle()">Settle payment</button>`;if(mdlMode==="st")renderSettle()}
+  <p class="small" style="margin:8px 0 0">Nothing is deducted automatically. Receivable is what a traveler paid upfront, less payments they have received. Paid Amount is only what you record in Settle payment (full or partial), and Outstanding Balance is Share less Paid Amount. Red brackets mean they have paid more than their share.</p>`;
+  $("#st").innerHTML=`<button onclick="openSettle()">Settle payment</button>`;if(mdlMode==="st")renderSettle();else if(mdlMode==="ex")renderExp()}
  $("#rc").innerHTML=showRc?`<div class="row"><button onclick="print()">Print / save as PDF</button><button class="ghost" onclick="png()">Download as image</button><button class="ghost" onclick="openM()">Edit selection</button><button class="ghost" onclick="hideRc()">Hide receipt</button></div>`:`<button onclick="openM()">Generate receipt</button>`;
  $("#slips").innerHTML=showRc?slips():"";fit();
 }
 
 /* ---------- receipts ---------- */
+let expDebts=[],mdlExp=null;
+function openExp(id){mdlMode="ex";mdlExp=id;renderExp();$("#mdl").classList.add("on")}
+function renderExp(){const e=trip.expenses.find(x=>x.id===mdlExp);if(!e){closeM();return}
+ const items=expStatus()[e.id].items,pays=(trip.payments||[]).filter(x=>x.eid===e.id);expDebts=items;
+ $("#mc").innerHTML=`<h2 style="margin-bottom:4px">${esc(e.desc)}</h2><div class="small" style="margin-bottom:12px"><span class="code">${esc(e.code)}</span> PHP ${fmt(ph(e))} · paid by ${Object.keys(payersOf(e)).map(esc).join(", ")}</div>
+ <h3 style="font-size:16px;margin-bottom:6px">Settle this expense</h3>
+ ${items.length?items.map((x,i)=>{const paid=x.amt-x.rem,done=x.rem<.005;return`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" ${done?"checked disabled":`onchange="recordExp(${i})"`}><span>${esc(x.from)} pays ${esc(x.to)} <span class="small">owes ${fmt(x.amt)}${paid>.005?", paid "+fmt(paid):""}</span></span></label>${done?`<span class="ok" style="flex:none">✓ Paid</span>`:`<input id="ea${i}" type="number" step="any" inputmode="decimal" value="${r2(x.rem)}">`}</div>`}).join(""):`<p class="empty">Nobody owes anything on this expense.</p>`}
+ <p class="small" style="margin:6px 0 0">Change the amount first for a part payment, then tick it.</p>
+ ${pays.length?`<h3 style="font-size:16px;margin:14px 0 6px">Payments recorded here</h3>`+pays.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):""}
+ <div class="row" style="margin-top:14px"><button class="ghost" onclick="closeM()">Close</button></div>`}
+function recordExp(i){const x=expDebts[i],a=parseFloat($("#ea"+i).value);
+ if(!x||!(a>0)){lists();return toast("Enter the amount that was paid.")}
+ if(a>x.rem+.005){lists();return toast("That is more than the outstanding PHP "+fmt(x.rem)+".")}
+ (trip.payments=trip.payments||[]).push({id:uid(),from:x.from,to:x.to,amount:Math.round(a*100)/100,date:today(),eid:mdlExp});save(trip);lists();toast("Payment recorded")}
 function openSettle(){mdlMode="st";renderSettle();$("#mdl").classList.add("on")}
-function renderSettle(){const P=trip.people,pay=trip.payments||[];sugg=settle(calc(trip.expenses));
- $("#mc").innerHTML=`<h2 style="margin-bottom:10px">Settle payment</h2>`+`<h3 style="font-size:16px;margin-bottom:6px">To pay</h3>${sugg.length?sugg.map((s,i)=>`<div class="crow"><label class="ck" style="flex:1"><input type="checkbox" onchange="recordPay(${i})">${esc(s[0])} pays ${esc(s[1])}</label><input id="pa${i}" type="number" step="any" inputmode="decimal" value="${r2(s[2])}"></div>`).join(""):`<p class="empty">Everyone is settled.</p>`}
-  <h3 style="font-size:16px;margin:14px 0 6px">Paid and settled</h3>${pay.length?pay.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${esc(x.from)} paid ${esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}</span></label>`).join(""):`<p class="empty">Nothing yet. Tick a payment above once it has been paid. Change the amount first if it is a part payment.</p>`}<div class="row" style="margin-top:14px"><select id="pf" style="width:auto">${P.map(n=>`<option>${esc(n)}</option>`).join("")}</select><span>paid</span><select id="pt" style="width:auto">${P.map((n,i)=>`<option${i===1?" selected":""}>${esc(n)}</option>`).join("")}</select><input id="pm" type="number" step="any" inputmode="decimal" placeholder="PHP amount" style="width:130px"><button class="ghost" onclick="addPay()">+ Add payment</button></div>`+`<div class="row" style="margin-top:14px"><button class="ghost" onclick="closeM()">Close</button></div>`}
+function renderSettle(){const P=trip.people,pay=trip.payments||[],c=calc(trip.expenses);
+ const selfPaid=n=>pay.filter(x=>x.from===n&&x.to===n).reduce((t,x)=>t+x.amount,0);
+ $("#mc").innerHTML=`<h2 style="margin-bottom:10px">Settle payment</h2>
+ <p class="small" style="margin:0 0 10px">Nothing is deducted automatically. Balances only change when you record a payment here.</p>
+ <h3 style="font-size:16px;margin-bottom:6px">Outstanding by traveler</h3>
+ ${P.map((n,i)=>{const le=Math.round((c[n].cover-selfPaid(n))*100)/100;return`<div class="crow"><span>${esc(n)}</span><span style="flex:none;text-align:right">${neg(c[n].out)}</span>${le>.005?`<button class="ghost" style="flex:none;padding:4px 10px;font-size:12px" onclick="lessOwn(${i})">Less own share (${fmt(le)})</button>`:""}</div>`}).join("")}
+ <h3 style="font-size:16px;margin:14px 0 6px">Paid and settled</h3>${pay.length?pay.map(x=>`<label class="ck"><input type="checkbox" checked onchange="undoPay('${x.id}')">${x.from===x.to?esc(x.from)+" less own share":esc(x.from)+" paid "+esc(x.to)} <b>PHP ${fmt(x.amount)}</b> <span class="small">${esc(x.date)}${x.eid?" · "+esc((trip.expenses.find(y=>y.id===x.eid)||{}).code||""):""}</span></label>`).join(""):`<p class="empty">Nothing yet. Add a payment below, full or partial.</p>`}
+ <div class="row" style="margin-top:14px"><select id="pf" style="width:auto">${P.map(n=>`<option>${esc(n)}</option>`).join("")}</select><span>paid</span><select id="pt" style="width:auto">${P.map((n,i)=>`<option${i===1?" selected":""}>${esc(n)}</option>`).join("")}</select><input id="pm" type="number" step="any" inputmode="decimal" placeholder="PHP amount" style="width:130px"><button class="ghost" onclick="addPay()">+ Add payment</button></div>
+ <div class="row" style="margin-top:14px"><button class="ghost" onclick="closeM()">Close</button></div>`}
+function lessOwn(i){const n=trip.people[i],c=calc(trip.expenses)[n],pay=trip.payments||[],sp=pay.filter(x=>x.from===n&&x.to===n).reduce((t,x)=>t+x.amount,0),a=Math.round((c.cover-sp)*100)/100;
+ if(!(a>.005))return;(trip.payments=pay).push({id:uid(),from:n,to:n,amount:a,date:today()});save(trip);lists();toast("Own share deducted for "+n)}
 function hideRc(){showRc=false;lists()}
-function closeM(){mdlMode=null;$("#mdl").classList.remove("on")}
+function closeM(){mdlMode=null;mdlExp=null;$("#mdl").classList.remove("on")}
 function selAll(cls,c){document.querySelectorAll("."+cls).forEach(x=>x.checked=c)}
 function openM(){const P=trip.people,ex=[...trip.expenses].sort(byCode),solo=!!trip.solo;
  const ckw=(k,l)=>`<label class="ck"><input type="checkbox" class="cw" data-k="${esc(k)}" ${exclWho.has(k)?"":"checked"}>${esc(l)}</label>`;
