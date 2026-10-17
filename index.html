@@ -234,12 +234,17 @@ function kindChange(){const f=$("#kind").value==="foreign";$("#fc").style.displa
 function onAmt(){const a=parseFloat($("#amt").value);if(a>0){if(last==="php"){const p=parseFloat($("#php").value);if(p>0)$("#rate").value=+(p/a).toFixed(6)}else{const x=parseFloat($("#rate").value);if(x>0)$("#php").value=r2(a*x)}}refreshSplit()}
 function onRate(){last="rate";const a=parseFloat($("#amt").value),x=parseFloat($("#rate").value);$("#php").value=a>0&&x>0?r2(a*x):"";refreshSplit()}
 function onPhp(){last="php";const a=parseFloat($("#amt").value),p=parseFloat($("#php").value);$("#rate").value=a>0&&p>0?+(p/a).toFixed(6):"";refreshSplit()}
-let prevU=null;
+let custUnit=null,prevC=null,prevU=null;
+function custInfo(){const a=parseFloat($("#amt").value)||0;if($("#kind").value==="php")return{local:false,total:a,label:"PHP",can:false};
+ const p=parseFloat($("#php").value),has=p>0,local=!has||custUnit==="local";return{local,total:local?a:p,label:local?curNow():"PHP",can:has}}
+function setCustUnit(u){custUnit=u;refreshSplit()}
 function rateHint(){const el=$("#rh");if(!el)return;const a=parseFloat($("#amt").value);el.style.display=$("#kind").value==="foreign"&&a>0&&!(parseFloat($("#rate").value)>0)&&!(parseFloat($("#php").value)>0)?"":"none"}
-function refreshSplit(){rateHint();if(trip.solo)return;const u=unitInfo();
- if(prevU&&prevU.pend!==u.pend&&prevU.total>0&&u.total>0){const f=u.total/prevU.total;for(const k in custVals){const x=parseFloat(custVals[k]);if(x>0)custVals[k]=r2(x*f)}for(const k in payVals){const x=parseFloat(payVals[k]);if(x>0)payVals[k]=r2(x*f)}if($("#smode").value==="custom")renderCust();if($("#mpt").checked)renderMp()}
- prevU=u;
- if($("#smode").value==="custom"){if(Object.keys(custVals).length)custSum();else renderCust()}if($("#mpt").checked)payInfo()}
+function refreshSplit(){rateHint();if(trip.solo)return;const u=unitInfo(),c=custInfo();
+ if(prevU&&prevU.pend!==u.pend&&prevU.total>0&&u.total>0){const f=u.total/prevU.total;for(const k in payVals){const x=parseFloat(payVals[k]);if(x>0)payVals[k]=r2(x*f)}if($("#mpt").checked)renderMp()}
+ if(prevC&&prevC.local!==c.local&&prevC.total>0&&c.total>0){const f=c.total/prevC.total;for(const k in custVals){const x=parseFloat(custVals[k]);if(x>0)custVals[k]=r2(x*f)}}
+ const redo=prevC&&(prevC.local!==c.local||prevC.can!==c.can);
+ prevU=u;prevC=c;
+ if($("#smode").value==="custom"){if(redo||!Object.keys(custVals).length)renderCust();else custSum()}if($("#mpt").checked)payInfo()}
 
 /* ----- payers ----- */
 function mpToggle(){const on=$("#mpt").checked;$("#mp").style.display=on?"":"none";$("#payer").disabled=on;if(on)renderMp()}
@@ -252,9 +257,9 @@ function shAll(){const c=$("#shall").checked;document.querySelectorAll(".sh").fo
 function shChange(){$("#shall").checked=[...document.querySelectorAll(".sh")].every(x=>x.checked);if($("#smode").value==="custom")renderCust()}
 function splitChange(){const m=$("#smode").value;$("#shc").style.display=m==="items"?"none":"";$("#cust").style.display=m==="custom"?"":"none";$("#itm").style.display=m==="items"?"":"none";
  if(m==="custom")renderCust();if(m==="items"){if(!items.length)items.push({name:"",orig:"",amount:0,owners:[]});renderItems()}}
-function renderCust(){const sel=shChecked(),U=unitInfo(),tot=U.total,k=sel.length;
- $("#cust").innerHTML=k?sel.map((n,i)=>{const v=custVals[n]!=null?custVals[n]:(tot&&k?(i<k-1?r2(tot/k):r2(tot-Math.round(tot/k*100)/100*(k-1))):"");return`<div class="crow"><span>${esc(n)}</span><input type="number" step="any" inputmode="decimal" class="cv" data-n="${esc(n)}" value="${esc(v)}" placeholder="${esc(U.label)}" oninput="custVals[this.dataset.n]=this.value;custSum()"></div>`}).join("")+`<div class="small" id="cs"></div><div class="row" style="margin-top:6px"><button class="ghost" onclick="custVals={};renderCust()">Split equally</button></div>`:`<p class="small">Tick who shares first.</p>`;custSum()}
-function custSum(){let s=0;document.querySelectorAll(".cv").forEach(i=>{const x=parseFloat(i.value);if(x>0)s+=x});const u=unitInfo(),t=u.total,el=$("#cs");if(el)el.innerHTML=`Charged in ${u.label}: ${fmt(s)} of ${fmt(t)}`+(Math.abs(s-t)>.05&&t>0?` <span class="neg">(${fmt(t-s)} left)</span>`:"")}
+function renderCust(){const sel=shChecked(),U=custInfo(),tot=U.total,k=sel.length,us=$("#kind").value==="foreign"?`<div class="row" style="margin-bottom:8px"><label style="margin:0">Amounts in</label><select id="cu" onchange="setCustUnit(this.value)" style="width:auto"><option value="local"${U.local?" selected":""}>${esc(curNow())} (foreign)</option><option value="php"${U.local?"":" selected"}${U.can?"":" disabled"}>PHP (converted)</option></select></div>`:"";
+ $("#cust").innerHTML=us+(k?sel.map((n,i)=>{const v=custVals[n]!=null?custVals[n]:(tot&&k?(i<k-1?r2(tot/k):r2(tot-Math.round(tot/k*100)/100*(k-1))):"");return`<div class="crow"><span>${esc(n)}</span><input type="number" step="any" inputmode="decimal" class="cv" data-n="${esc(n)}" value="${esc(v)}" placeholder="${esc(U.label)}" oninput="custVals[this.dataset.n]=this.value;custSum()"></div>`}).join("")+`<div class="small" id="cs"></div><div class="row" style="margin-top:6px"><button class="ghost" onclick="custVals={};renderCust()">Split equally</button></div>`:`<p class="small">Tick who shares first.</p>`);custSum()}
+function custSum(){let s=0;document.querySelectorAll(".cv").forEach(i=>{const x=parseFloat(i.value);if(x>0)s+=x});const u=custInfo(),t=u.total,el=$("#cs");if(el)el.innerHTML=`Charged in ${u.label}: ${fmt(s)} of ${fmt(t)}`+(Math.abs(s-t)>.05&&t>0?` <span class="neg">(${fmt(t-s)} left)</span>`:"")}
 
 /* ----- receipt items ----- */
 function renderItems(){const P=trip.people;
@@ -280,7 +285,7 @@ function addExp(){
  if(mode==="items"){if(!items.length)return toast("Add at least one item.");for(const i of items){if(!i.name.trim()||!(i.amount>0))return toast("Each item needs a name and an amount.");if(!i.owners.length)return toast("Tick who owns \""+i.name+"\".")}
   itm=items.map(i=>({name:i.name.trim(),orig:(i.orig||"").trim(),amount:i.amount,owners:[...i.owners]}));share=[...new Set(itm.flatMap(i=>i.owners))]}
  else if(mode==="custom"){if(!share.length)return toast("Tick who shares this expense.");alloc={};let s=0;document.querySelectorAll(".cv").forEach(i=>{const x=parseFloat(i.value);if(x>0){alloc[i.dataset.n]=x;s+=x}});
-  if(Math.abs(s-(pend?amount:pv))>.05)return toast("The custom amounts add up to "+fmt(s)+" but the expense is "+(pend?cur:"PHP")+" "+fmt(pend?amount:pv)+".");if(pend){allocL=alloc;alloc=null}share=Object.keys(allocL||alloc)}
+  const ci=custInfo();if(Math.abs(s-ci.total)>.05)return toast("The custom amounts add up to "+fmt(s)+" but the expense is "+ci.label+" "+fmt(ci.total)+".");if(ci.local){allocL=alloc;alloc=null}share=Object.keys(allocL||alloc)}
  else if(!share.length)return toast("Tick who shares this expense (use All to tick everyone).");
  const e={id:editId||uid(),code:v("code").trim(),date:v("date"),desc:v("desc").trim(),amount,cur,rate,php:pv,mode:v("mode"),book:v("book").trim(),link:v("link").trim(),note:v("note").trim(),payer,share};
  if(payers)e.payers=payers;if(alloc)e.alloc=alloc;if(payersL)e.payersLocal=payersL;if(allocL)e.allocLocal=allocL;if(itm)e.items=itm;
@@ -289,17 +294,17 @@ function addExp(){
 }
 function resetForm(){editId=null;if(!$("#desc"))return;
  ["desc","amt","rate","php","book","link","note"].forEach(i=>$("#"+i).value="");
- editCur=null;last="rate";amtAuto=true;prevU=null;items=[];custVals={};payVals={};hideF();
+ editCur=null;last="rate";amtAuto=true;prevU=null;prevC=null;custUnit=null;items=[];custVals={};payVals={};hideF();
  $("#kind").value=trip.cur==="PHP"?"php":"foreign";
  if(!trip.solo){$("#mpt").checked=false;mpToggle();$("#smode").value="equal";document.querySelectorAll(".sh").forEach(x=>x.checked=false);$("#shall").checked=false;splitChange()}
  kindChange();$("#code").value=nextCode();$("#ft").textContent="Add expense";$("#sv").textContent="Save expense";$("#cn").style.display="none"}
-function editExp(id){const e=trip.expenses.find(x=>x.id===id);if(!e)return;editId=id;prevU=null;
+function editExp(id){const e=trip.expenses.find(x=>x.id===id);if(!e)return;editId=id;prevU=null;prevC=null;
  $("#code").value=e.code;$("#date").value=e.date;$("#desc").value=e.desc;$("#amt").value=e.amount;editCur=e.cur==="PHP"?null:e.cur;last="rate";amtAuto=false;
  $("#kind").value=e.cur==="PHP"?"php":"foreign";$("#rate").value=e.cur==="PHP"?"":(e.rate>0?e.rate:"");$("#php").value=e.cur==="PHP"?"":(ph(e)>0?r2(ph(e)):"");
  $("#book").value=e.book||"";$("#link").value=e.link||"";$("#note").value=e.note||"";hideF();if(e.link)showF("lk",false);if(e.note)showF("nt",false);$("#mode").value=e.mode;items=[];custVals={};payVals={};
  if(!trip.solo){const pp=e.payers||e.payersLocal,mp=!!(pp&&Object.keys(pp).length);$("#mpt").checked=mp;if(mp)for(const n in pp)payVals[n]=pp[n];$("#payer").value=e.payer;mpToggle();
   document.querySelectorAll(".sh").forEach(x=>x.checked=e.share.includes(x.value));$("#shall").checked=[...document.querySelectorAll(".sh")].every(x=>x.checked);
-  {const al=e.alloc||e.allocLocal;if(al)for(const n in al)custVals[n]=r2(al[n])}if(e.items)items=e.items.map(i=>({...i,owners:[...i.owners]}));
+  {const al=e.alloc||e.allocLocal;if(al)for(const n in al)custVals[n]=r2(al[n]);custUnit=e.allocLocal?"local":(e.alloc?"php":null)}if(e.items)items=e.items.map(i=>({...i,owners:[...i.owners]}));
   $("#smode").value=e.items?"items":(e.alloc||e.allocLocal)?"custom":"equal";splitChange()}
  kindChange();$("#ft").textContent="Edit expense";$("#sv").textContent="Update expense";$("#cn").style.display="";scrollTo({top:0,behavior:"smooth"})}
 function delExp(id){if(!confirm("Delete this expense?"))return;trip.expenses=trip.expenses.filter(x=>x.id!==id);save(trip);lists()}
