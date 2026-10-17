@@ -62,6 +62,7 @@ a.btn{display:inline-block;text-decoration:none;background:var(--lilac);color:va
 #exl tr[onclick]{cursor:pointer}#exl tr[onclick]:hover td{background:#faf5ff}
 .dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin:0}.dl dt{color:var(--mute)}.dl dd{margin:0;text-align:right;overflow-wrap:anywhere}
 .pend{color:var(--bad);font-size:11px;font-weight:700;white-space:normal;display:inline-block;max-width:120px;line-height:1.25}
+.slip .ln.paid{color:#a9a9a9;text-decoration:line-through;text-decoration-color:#c8c8c8}.slip .ln.sub{color:#999;padding-left:14px}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -186,7 +187,7 @@ function openTrip(id){shellId=null;trip=JSON.parse(localStorage.getItem("ps:"+id
 function showTrip(){
  topbar();
  if(!trip){$("#app").innerHTML=`<section><p class="empty">Trip not found.</p><button onclick="home()">Back to trips</button></section>`;shellId=null;return}
- if(shellId!==trip.id){showRc=false;exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];shell();shellId=trip.id;resetForm()}
+ if(shellId!==trip.id){dateFilter="";showRc=false;exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];shell();shellId=trip.id;resetForm()}
  lists();
 }
 function setDates(){const a=$("#d1").value,b=$("#d2").value;if(a&&b&&b<a){toast("The end date can't be before the start date.");$("#d1").value=trip.start||"";$("#d2").value=trip.end||"";return}trip.start=a;trip.end=b;save(trip);$("#fn").textContent=tripCode(trip)+".json";lists()}
@@ -219,7 +220,7 @@ function shell(){
   <div id="itm" class="blk" style="display:none"><p class="small" style="margin:0 0 8px">Add each item on the receipt, then tick who it belongs to. Tax or tips are shared in proportion to each person's items.</p><div id="itl"></div><div class="row"><button class="ghost" onclick="items.push({name:'',orig:'',amount:0,owners:[]});renderItems()">Add item</button></div>
    <label style="margin-top:10px">Paste items<span class="lx"> (one per line: Item | Price, or Original | English | Price)</span></label><textarea id="paste" rows="3"></textarea><div class="row" style="margin-top:6px"><button class="ghost" onclick="pasteItems()">Add pasted items</button></div></div></div>`}
   <div class="row" style="margin-top:14px"><button onclick="addExp()" id="sv">Save expense</button><button class="ghost" id="cn" style="display:none" onclick="resetForm()">Cancel edit</button></div></section>
- <section><h2>Expenses</h2><div id="exl"></div></section>
+ <section><h2>Expenses</h2><div class="row" style="margin-bottom:10px"><label style="margin:0">Show date</label><input id="dfl" type="date" onchange="setDF(this.value)" style="width:auto"><button class="ghost" id="dfx" style="display:none;padding:4px 12px;font-size:12px" onclick="setDF('')">Show all</button></div><div id="exl"></div></section>
  <section><h2>Overview of Expenses</h2><div id="ov"></div></section>
  ${solo?"":`<section><h2>Settle up</h2><div id="st"></div></section>`}
  <section><h2>Receipts</h2><div id="rc"></div><div id="slips"></div></section>`;
@@ -234,7 +235,8 @@ function kindChange(){const f=$("#kind").value==="foreign";$("#fc").style.displa
 function onAmt(){const a=parseFloat($("#amt").value);if(a>0){if(last==="php"){const p=parseFloat($("#php").value);if(p>0)$("#rate").value=+(p/a).toFixed(6)}else{const x=parseFloat($("#rate").value);if(x>0)$("#php").value=r2(a*x)}}refreshSplit()}
 function onRate(){last="rate";const a=parseFloat($("#amt").value),x=parseFloat($("#rate").value);$("#php").value=a>0&&x>0?r2(a*x):"";refreshSplit()}
 function onPhp(){last="php";const a=parseFloat($("#amt").value),p=parseFloat($("#php").value);$("#rate").value=a>0&&p>0?+(p/a).toFixed(6):"";refreshSplit()}
-let custUnit=null,prevC=null,prevU=null;
+let dateFilter="",custUnit=null,prevC=null,prevU=null;
+function setDF(v){dateFilter=v||"";$("#dfl").value=dateFilter;$("#dfx").style.display=dateFilter?"":"none";lists()}
 function custInfo(){const a=parseFloat($("#amt").value)||0;if($("#kind").value==="php")return{local:false,total:a,label:"PHP",can:false};
  const p=parseFloat($("#php").value),has=p>0,local=!has||custUnit==="local";return{local,total:local?a:p,label:local?curNow():"PHP",can:has}}
 function setCustUnit(u){custUnit=u;refreshSplit()}
@@ -329,14 +331,14 @@ function expStatus(){const out=Object.create(null),debts=[];
 const selfDebt=(n,xs=expStatus())=>Object.values(xs).reduce((t,q)=>t+q.items.filter(x=>x.from===n&&x.to===n).reduce((u,x)=>u+x.amt,0),0);
 /* ---------- lists ---------- */
 function lists(){
- const ex=[...trip.expenses].sort(byCode),solo=!!trip.solo,P=trip.people;
+ const exAll=[...trip.expenses].sort(byCode),ex=dateFilter?exAll.filter(e=>e.date===dateFilter):exAll,solo=!!trip.solo,P=trip.people;
  const payTxt=e=>{const m=payersOf(e),k=Object.keys(m);return k.length>1?k.map(n=>isPend(e)?esc(n):`${esc(n)} <span class="small">${fmt(m[n])}</span>`).join("<br>"):esc(k[0])};
  const shTxt=e=>e.items?"By items: "+e.share.map(esc).join(", "):(e.alloc||e.allocLocal)?"Custom: "+e.share.map(esc).join(", "):(e.share.length===P.length?"Everyone":e.share.map(esc).join(", "));
- const pendN=trip.expenses.filter(isPend).length,pendBan=pendN?`<p class="pend" style="max-width:none;margin:0 0 8px">${pendN} expense${pendN>1?"s have":" has"} no converted rate yet and ${pendN>1?"are":"is"} not included in these numbers.</p>`:"";
+ const pendN=trip.expenses.filter(isPend).length,pendF=ex.filter(isPend).length,pendBan=pendN?`<p class="pend" style="max-width:none;margin:0 0 8px">${pendN} expense${pendN>1?"s have":" has"} no converted rate yet and ${pendN>1?"are":"is"} not included in these numbers.</p>`:"";
  const xs=solo?null:expStatus();
  const stCell=e=>{const q=xs[e.id];return isPend(e)?`<span class="small">–</span>`:q.d<.005?`<span class="small">–</span>`:q.u<.005?`<span class="ok">✓ Paid</span>`:`${fmt(q.u)}<div class="small">${q.u<q.d-.005?"Partial":"Unpaid"}</div>`};
  $("#exl").innerHTML=ex.length?`<div class="wrap"><table><tr><th>Code</th><th>Details</th>${solo?"":"<th>Paid by</th><th>Shared by</th>"}<th class="n">Amount</th><th class="n">PHP</th>${solo?"":`<th class="n">Outstanding</th>`}<th></th></tr>${ex.map(e=>`<tr${solo?"":` onclick="openExp('${e.id}')" title="Tap to settle"`}><td><span class="code">${esc(e.code)}</span></td><td>${esc(e.desc)}<div class="small">${esc(e.date)} · ${esc(e.mode)}${e.book?" · via "+esc(e.book):""}</div>${e.note?`<div class="small">Note: ${esc(e.note)}</div>`:""}${safeUrl(e.link)?`<div class="small"><a href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Receipt link</a></div>`:""}</td>${solo?"":`<td>${payTxt(e)}</td><td class="small">${shTxt(e)}</td>`}<td class="n">${esc(e.cur)} ${fmt(e.amount)}${e.cur==="PHP"||isPend(e)?"":`<div class="small">@ ${rt(e.rate)}</div>`}</td><td class="n">${isPend(e)?`<span class="pend">No converted rate yet</span>`:`<b>${fmt(ph(e))}</b>`}</td>${solo?"":`<td class="n">${stCell(e)}</td>`}<td class="n"><button class="x" onclick="event.stopPropagation();editExp('${e.id}')" style="color:var(--violet)">Edit</button><button class="x" onclick="event.stopPropagation();delExp('${e.id}')">Delete</button></td></tr>`).join("")}</table></div>
- <p style="text-align:right;margin:10px 0 0"><b>Total: PHP ${fmt(trip.expenses.reduce((s,e)=>s+ph(e),0))}</b>${pendN?` <span class="pend" style="max-width:none"> · ${pendN} without a converted rate not included</span>`:""}</p>${solo?"":`<p class="small" style="text-align:right;margin:4px 0 0">Tap an expense to settle it. Outstanding is the full amount still unpaid on that expense, including the payer\'s own share until you record it. Payments recorded under Settle payment go to the oldest expense first. Nothing is deducted automatically.</p>`}`:`<p class="empty">No expenses yet. Add the first one above.</p>`;
+ <p style="text-align:right;margin:10px 0 0"><b>${dateFilter?"Total on "+esc(dateFilter):"Total"}: PHP ${fmt(ex.reduce((s,e)=>s+ph(e),0))}</b>${pendF?` <span class="pend" style="max-width:none"> · ${pendF} without a converted rate not included</span>`:""}</p>${solo?"":`<p class="small" style="text-align:right;margin:4px 0 0">Tap an expense to settle it. Outstanding is the full amount still unpaid on that expense, including the payer\'s own share until you record it. Payments recorded under Settle payment go to the oldest expense first. Nothing is deducted automatically.</p>`}`:`<p class="empty">${exAll.length?"No expenses on this date.":"No expenses yet. Add the first one above."}</p>`;
  const c=calc(trip.expenses);
  if(solo){$("#ov").innerHTML=pendBan+`<p style="margin:0"><b>Total spent: PHP ${fmt(c[P[0]].share)}</b></p>`}
  else{const T={recv:0,share:0,paid:0,out:0};P.forEach(n=>{for(const k in T)T[k]+=c[n][k]});
@@ -386,15 +388,18 @@ function lessOwn(i){const n=trip.people[i],c=calc(trip.expenses)[n],pay=trip.pay
  if(!(a>.005))return;(trip.payments=pay).push({id:uid(),from:n,to:n,amount:a,date:today()});save(trip);lists();toast("Own share deducted for "+n)}
 function hideRc(){showRc=false;lists()}
 function closeM(){mdlMode=null;mdlExp=null;$("#mdl").classList.remove("on")}
+function pickRcDate(v){document.querySelectorAll(".ce,.cp").forEach(x=>{x.checked=!v||x.dataset.d===v});if(!v&&$("#rdate"))$("#rdate").value=""}
 function selAll(cls,c){document.querySelectorAll("."+cls).forEach(x=>x.checked=c)}
 function openM(){const P=trip.people,ex=[...trip.expenses].filter(e=>!isPend(e)).sort(byCode),solo=!!trip.solo;
  const ckw=(k,l)=>`<label class="ck"><input type="checkbox" class="cw" data-k="${esc(k)}" ${exclWho.has(k)?"":"checked"}>${esc(l)}</label>`;
- const per=n=>{const mine=ex.filter(e=>(shares(e)[n]||0)>0||payersOf(e)[n]);return`<details><summary>${esc(n)}</summary>${mine.map(e=>`<label class="ck"><input type="checkbox" class="cp" data-n="${esc(n)}" data-k="${e.id}" ${exclPer[n]&&exclPer[n].has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses.</p>`}</details>`};
+ const per=n=>{const mine=ex.filter(e=>(shares(e)[n]||0)>0||payersOf(e)[n]);return`<details><summary>${esc(n)}</summary>${mine.map(e=>`<label class="ck"><input type="checkbox" class="cp" data-n="${esc(n)}" data-k="${e.id}" data-d="${esc(e.date)}" ${exclPer[n]&&exclPer[n].has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses.</p>`}</details>`};
  $("#mc").innerHTML=`<h2 style="margin-bottom:10px">Generate receipt</h2>${trip.expenses.some(isPend)?`<p class="pend" style="max-width:none;margin:0 0 8px">Expenses without a converted rate are left out.</p>`:""}
+ <div class="row" style="margin-bottom:10px"><label style="margin:0">Only this date</label><input id="rdate" type="date" style="width:auto" onchange="pickRcDate(this.value)"><button class="ghost" style="padding:4px 12px;font-size:12px" onclick="pickRcDate('')">All dates</button></div>
  <details open><summary>Travelers</summary><label class="ck"><input type="checkbox" checked onchange="selAll('cw',this.checked)">Select all</label>${solo?"":ckw("_t","Total (everyone)")}${P.map(n=>ckw(n,n)).join("")}</details>
- <details><summary>Expenses included for everyone</summary><label class="ck"><input type="checkbox" checked onchange="selAll('ce',this.checked)">Select all</label>${ex.map(e=>`<label class="ck"><input type="checkbox" class="ce" data-k="${e.id}" ${exclEx.has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses yet.</p>`}</details>
+ <details><summary>Expenses included for everyone</summary><label class="ck"><input type="checkbox" checked onchange="selAll('ce',this.checked)">Select all</label>${ex.map(e=>`<label class="ck"><input type="checkbox" class="ce" data-k="${e.id}" data-d="${esc(e.date)}" ${exclEx.has(e.id)?"":"checked"}>${esc(e.code)} ${esc(e.desc)}</label>`).join("")||`<p class="small">No expenses yet.</p>`}</details>
  ${solo?"":`<details><summary>Include or exclude per traveler</summary>${P.map(per).join("")}</details>`}
  <div class="row" style="margin-top:12px"><button onclick="applyRc()">Show receipts</button><button class="ghost" onclick="closeM()">Cancel</button></div>`;
+ if(dateFilter){$("#rdate").value=dateFilter;pickRcDate(dateFilter)}
  mdlMode="rc";$("#mdl").classList.add("on")}
 function applyRc(){exclWho.clear();exclEx.clear();for(const k in exclPer)delete exclPer[k];
  document.querySelectorAll(".cw").forEach(x=>{if(!x.checked)exclWho.add(x.dataset.k)});
@@ -406,17 +411,23 @@ function head(t){return`<h3>${esc(trip.name)}</h3><div class="c">${esc(trip.coun
 function lineItems(e,n){const sh=shares(e);if(!((sh[n]||0)>0))return[];
  if(e.items&&e.items.length){const tot=ph(e),sum=e.items.reduce((s,i)=>s+i.amount,0)||1,r=[];e.items.forEach(i=>{const ow=i.owners.length?i.owners:e.share;if(ow.includes(n))r.push({t:e.desc+": "+i.name,a:i.amount/sum*tot/ow.length})});return r}
  return[{t:e.desc,a:sh[n]}]}
-const ln=(t,b,a)=>`<div class="ln fit"><span>${esc(t)}${b?" - "+esc(b):""}</span><span>${fmt(a)}</span></div>`;
-const tb=c=>`<div class="ln"><span>Share</span><span>PHP ${fmt(c.share)}</span></div><div class="ln"><span>Amount Paid</span><span>PHP ${fmt(c.paid)}</span></div><div class="ln tot"><span>Outstanding Balance</span><span>${c.out<-.005?`<span class="neg">(PHP ${fmt(-c.out)})</span>`:"PHP "+fmt(Math.abs(c.out)<.005?0:c.out)}</span></div>`;
-function slips(){const out=[],gx=trip.expenses.filter(e=>!isPend(e)&&!exclEx.has(e.id)).sort(byCode);
+let XS={};
+const ln=(t,b,a,done)=>`<div class="ln fit${done?" paid":""}"><span>${esc(t)}${b?" - "+esc(b):""}</span><span>${fmt(a)}</span></div>`;
+const subp=a=>`<div class="ln fit sub"><span>paid</span><span>${fmt(a)}</span></div>`;
+const tb=(share,paid)=>{const out=share-paid;return`<div class="ln"><span>Share</span><span>PHP ${fmt(share)}</span></div><div class="ln"><span>Amount Paid</span><span>PHP ${fmt(paid)}</span></div><div class="ln tot"><span>Outstanding Balance</span><span>${out<-.005?`<span class="neg">(PHP ${fmt(-out)})</span>`:"PHP "+fmt(Math.abs(out)<.005?0:out)}</span></div>`};
+function dnums(e,n){const it=((XS[e.id]||{}).items||[]).filter(x=>x.from===n),A=it.reduce((t,x)=>t+x.amt,0),R=it.reduce((t,x)=>t+x.rem,0);return{A,P:Math.max(A-R,0),done:A>.005&&R<.005}}
+const legend=any=>any?`<div class="c" style="font-size:11px;margin-top:6px">Struck-through lines are already paid</div>`:"";
+function slips(){XS=expStatus();const out=[],gx=trip.expenses.filter(e=>!isPend(e)&&!exclEx.has(e.id)).sort(byCode);
  if(!trip.solo&&!exclWho.has("_t"))out.push(totalSlip(gx));
  trip.people.filter(n=>!exclWho.has(n)).forEach(n=>out.push(personSlip(n,expFor(n))));
  return out.join("")||`<p class="empty">No receipts selected.</p>`}
-function personSlip(n,ex){const c=calc(ex)[n],lines=[];ex.forEach(e=>lineItems(e,n).forEach(l=>lines.push(ln(l.t,e.book,l.a))));
- return`<div class="slip">${head("Receipt")}<div class="nm">${esc(n)}</div><hr>${lines.join("")||`<div class="c">No shared expenses</div>`}<hr>${tb(c)}<hr><div class="c">Thank you!</div></div>`}
-function totalSlip(ex){const c=calc(ex),tot=ex.reduce((s,e)=>s+ph(e),0);
- return`<div class="slip">${head("Trip receipt")}${ex.map(e=>ln(e.desc,e.book,ph(e))).join("")||`<div class="c">No expenses</div>`}<hr><div class="ln tot"><span>TOTAL</span><span>PHP ${fmt(tot)}</span></div><hr>
- ${trip.people.map(n=>`<div class="nm">${esc(n)}</div>${tb(c[n])}<hr>`).join("")}<div class="c">Thank you!</div></div>`}
+function personSlip(n,ex){const lines=[];let share=0,paid=0,any=false;
+ ex.forEach(e=>{const L=lineItems(e,n);if(!L.length)return;const d=dnums(e,n);L.forEach(l=>{lines.push(ln(l.t,e.book,l.a,d.done));share+=l.a});paid+=d.P;if(d.done)any=true;else if(d.P>.005){any=true;lines.push(subp(d.P))}});
+ return`<div class="slip">${head("Receipt")}<div class="nm">${esc(n)}</div><hr>${lines.join("")||`<div class="c">No shared expenses</div>`}<hr>${tb(share,paid)}${legend(any)}<hr><div class="c">Thank you!</div></div>`}
+function totalSlip(ex){let tot=0,any=false;
+ const lines=ex.map(e=>{const q=XS[e.id]||{d:0,u:0},done=q.d>.005&&q.u<.005,P=q.d-q.u;tot+=q.u;let h=ln(e.desc,e.book,ph(e),done);if(done)any=true;else if(P>.005){any=true;h+=subp(P)}return h});
+ return`<div class="slip">${head("Trip receipt")}${lines.join("")||`<div class="c">No expenses</div>`}<hr><div class="ln tot"><span>TOTAL OUTSTANDING</span><span>PHP ${fmt(tot)}</span></div>${legend(any)}<hr>
+ ${trip.people.map(n=>{let sh=0,pd=0;ex.forEach(e=>{sh+=shares(e)[n]||0;pd+=dnums(e,n).P});return`<div class="nm">${esc(n)}</div>${tb(sh,pd)}<hr>`}).join("")}<div class="c">Thank you!</div></div>`}
 function fit(){document.querySelectorAll(".slip .fit").forEach(el=>{let fs=13,g=0;el.style.fontSize=fs+"px";while(el.scrollWidth>el.clientWidth+1&&fs>7&&g++<40){fs-=.5;el.style.fontSize=fs+"px"}})}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
 async function png(){
