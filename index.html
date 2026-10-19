@@ -125,14 +125,20 @@ function norm(t){
   if(e.payersLocal)for(const k in e.payersLocal)e.payersLocal[k]=Number(e.payersLocal[k])||0;
   if(e.payers)for(const k in e.payers)e.payers[k]=Number(e.payers[k])||0});
  return t}
+let pendImp=null;
+function mergeTrip(c,n){const p=new Set(c.people);n.people.forEach(x=>{if(!p.has(x)){c.people.push(x);p.add(x)}});
+ const ei=new Set(c.expenses.map(e=>e.id));n.expenses.forEach(e=>{if(!ei.has(e.id))c.expenses.push(e)});
+ c.payments=c.payments||[];const pi=new Set(c.payments.map(x=>x.id));(n.payments||[]).forEach(x=>{if(!pi.has(x.id))c.payments.push(x)});return c}
+function impDialog(k,n){mdlMode="imp";$("#mc").innerHTML=`<h2 style="margin-bottom:8px">This file overlaps your saved data</h2><p>${n===1?"This trip is":k+" of "+n+" trips in this file are"} already saved in this browser. What should happen?</p><p class="small"><b>Overwrite</b> replaces the saved version with the one in the file.<br><b>Merge</b> keeps what is saved here and adds any people, expenses and payments from the file that are missing.<br><b>Cancel</b> changes nothing.</p><div class="row"><button onclick="applyImp('overwrite')">Overwrite</button><button class="ghost" onclick="applyImp('merge')">Merge</button><button class="ghost" onclick="applyImp('cancel')">Cancel</button></div>`;$("#mdl").classList.add("on")}
+function applyImp(mode){const L=pendImp;pendImp=null;closeM();if(mode==="cancel"||!L)return toast("Nothing was changed.");
+ L.forEach(t=>{let cur=null;try{cur=norm(JSON.parse(localStorage.getItem("ps:"+t.id)||"null"))}catch(e){}
+  save(cur&&mode==="merge"?mergeTrip(cur,t):t)});
+ if(L.length===1)openTrip(L[0].id);else home();toast(L.length+" trip"+(L.length===1?"":"s")+(mode==="merge"?" merged":" loaded"))}
 function importFile(inp){const f=inp.files[0];inp.value="";if(!f)return;const rd=new FileReader();
  rd.onerror=()=>toast("Could not read that file.");
  rd.onload=()=>{try{const d=JSON.parse(rd.result),raw=Array.isArray(d.trips)?d.trips:[d.trip||d],list=raw.map(norm);if(!list.length)throw 0;
-  const ex=list.filter(t=>localStorage.getItem("ps:"+t.id));let rep=true;
-  if(ex.length)rep=confirm(list.length===1?"This trip is already saved in this browser. Replace it with the version in the file?":ex.length+" of "+list.length+" trips in this file are already saved in this browser. Replace them with the versions in the file? (Cancel keeps your current copies and adds only the new ones.)");
-  let n=0;list.forEach(t=>{if(localStorage.getItem("ps:"+t.id)&&!rep)return;save(t);n++});
-  if(list.length===1&&n===1)openTrip(list[0].id);else home();
-  toast(n+" trip"+(n===1?"":"s")+" loaded")}catch(e){toast("That doesn't look like a Travel Buddy file.")}};
+  pendImp=list;const k=list.filter(t=>localStorage.getItem("ps:"+t.id)).length;
+  if(k)impDialog(k,list.length);else applyImp("overwrite")}catch(e){toast("That doesn't look like a Travel Buddy file.")}};
  rd.readAsText(f)}
 
 /* ---------- calculations ---------- */
