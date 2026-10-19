@@ -37,15 +37,25 @@ tr.next td{background:var(--lilac)}.od{color:var(--bad);font-weight:700}
 .gh td{background:var(--lilac);color:var(--deep);font-weight:700;border-bottom:0}
 .stk{border:1.5px dashed var(--orchid);border-radius:12px;padding:8px 12px;margin-top:12px}.stk .row{padding:3px 0}
 .stat.c{cursor:pointer}.dt{width:auto;padding:3px 6px;font-size:12px}td .nt{white-space:normal;min-width:130px;color:var(--mute);font-size:12px}
+.mdl{position:fixed;inset:0;background:#0a2a2c88;display:none;place-items:center;z-index:40;padding:16px}.mdl.on{display:grid}.mc{background:var(--card);border-radius:18px;padding:18px;max-width:440px;width:100%}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--lilac);border-radius:99px;padding:4px 10px;margin:0 4px 6px 0;font-size:13px;color:var(--deep);cursor:pointer}.chip input{width:16px;height:16px}
+.sg{display:flex;flex-wrap:wrap;gap:18px}.sw{max-width:100%}
+.slip{background:#fff;width:330px;max-width:100%;padding:18px 16px;font:13px/1.45 "Courier Prime",monospace;color:#222;border:1px dashed var(--orchid);border-radius:4px}
+.slip h3{font-family:"Special Elite","Courier Prime",monospace;font-size:16px;text-align:center;color:#222}.slip .c{text-align:center;color:#777}.slip hr{border:0;border-top:1px dashed #bbb;margin:9px 0}
+.slip .ln{display:flex;justify-content:space-between;gap:10px}.slip .ln span:last-child{white-space:nowrap}.slip .nm{text-align:center;font-weight:700;font-size:15px;margin-top:4px}.slip .tot{font-weight:700}
+.slip .ln.paid{color:#a9a9a9;text-decoration:line-through;text-decoration-color:#c8c8c8}.slip .ln.sub{color:#999;padding-left:14px;font-size:12px}
+@media print{body *{visibility:hidden}#slips,#slips *{visibility:visible}#slips{position:absolute;left:0;top:0;width:100%}#slips .noprint{display:none}.slip{border:0;margin:0 auto 20px;page-break-after:always;break-inside:avoid}.mdl{display:none!important}}
 </style></head>
 <body>
-<header style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1 onclick="home()">🧾 Financial Buddy</h1><a href="https://introvertdiary.github.io/travelbuddy/" style="color:var(--violet);font-weight:700;text-decoration:none">← Travel Buddy</a></header>
+<header style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1 onclick="home()">🧾 Financial Buddy</h1><div class="row"><button class="ghost" onclick="exportAll()">Download my data</button><button class="ghost" onclick="$('#fi').click()">Open saved file</button><a href="https://introvertdiary.github.io/travelbuddy/" style="color:var(--violet);font-weight:700;text-decoration:none">← Travel Buddy</a></div></header><input type="file" id="fi" accept=".json,application/json" hidden onchange="importFile(this)"><div class="mdl" id="mdl" onclick="if(event.target===this)closeM()"><div class="mc" id="mc"></div></div>
 <main id="app"></main><div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const r2=n=>Math.round(n*100)/100;
+const split=(t,n,i)=>{const b=r2(t/n);return i===n-1?r2(t-b*(n-1)):b};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const pd=s=>new Date(s+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
@@ -54,14 +64,17 @@ const ym=n=>n<=0?"none":(n>=12?Math.floor(n/12)+" yr ":"")+(n%12?n%12+" mo":"");
 const T={exp:{bal:"Balance left",done:"Paid so far",left:"Payments left",od:"Overdue payments",nx:"Next due",set:"Settled",kinds:["Bank","Credit card","Person","Other expense"],ttl:"Set Up Expense Account",list:"Your expense list",add:"Add items",dl:"Due date (first payment)",sec:"Due dates",rec:"Installment",due:"due"},
  inc:{bal:"Left to receive",done:"Received so far",left:"Receipts left",od:"Late receipts",nx:"Next expected",set:"Received in full",kinds:["Employer","Client","Person","Other income"],ttl:"Set Up Income Account",list:"Your income list",add:"Add expected income",dl:"Expected date (first receipt)",sec:"Expected dates",rec:"Recurring monthly",due:"expected"}};
 const sd=a=>a.side==="inc"?"inc":"exp";
-let accts=[],stack=[],cur=null,showSum=false;
+let accts=[],stack=[],cur=null,showSum=false,people=[],sel=new Set(),cust={},spMode="e",incMe=false;
+try{people=JSON.parse(localStorage.getItem("debtbuddy:people:v1")||"[]");if(!Array.isArray(people))people=[]}catch(e){people=[]}
+function savePpl(){try{localStorage.setItem("debtbuddy:people:v1",JSON.stringify(people))}catch(e){}}
+const plist=()=>[...new Set([...people,...accts.flatMap(a=>a.items.flatMap(i=>Object.keys(i.alloc||{})))])];
 try{accts=JSON.parse(localStorage.getItem("debtbuddy:v2")||"[]");if(!Array.isArray(accts))accts=[]}catch(e){accts=[]}
 function save(){try{localStorage.setItem("debtbuddy:v2",JSON.stringify(accts))}catch(e){toast("Could not save in this browser.")}}
 function addM(y,m,d,i){const t=new Date(y,m-1+i,1),l=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(Math.min(d,l)).padStart(2,"0")}
 function pays(it){const n=it.months,b=r2(it.amount/n),[y,m,d]=it.due.split("-").map(Number),po=it.paidOn||[];return Array.from({length:n},(_,i)=>({i,date:addM(y,m,d,i),amt:i===n-1?r2(it.amount-b*(n-1)):b,paid:!!it.paid[i],on:po[i]||""}))}
 function asum(a){const rows=[];let ten=0;a.items.forEach(it=>{const p=pays(it);ten=Math.max(ten,p.filter(x=>!x.paid).length);p.forEach(x=>rows.push({it,p:x}))});
  const un=rows.filter(r=>!r.p.paid),tot=r2(rows.reduce((s,r)=>s+r.p.amt,0)),out=r2(un.reduce((s,r)=>s+r.p.amt,0)),t=today();
- return{rows,tot,out,paidAmt:r2(tot-out),left:un.length,ten,od:un.filter(r=>r.p.date<t).length,next:un.map(r=>r.p.date).sort()[0],pct:tot?100*(tot-out)/tot:0,fin:rows.length>0&&!un.length,last:rows.filter(r=>r.p.paid&&r.p.on).map(r=>r.p.on).sort().pop()||""}}
+ return{rows,tot,out,paidAmt:r2(tot-out),left:un.length,ten,od:un.filter(r=>r.p.date<t).length,next:un.map(r=>r.p.date).sort()[0],pct:tot?100*(tot-out)/tot:0,oo:r2(un.reduce((q,r)=>q+(r.it.who==="others"?Object.values(r.it.alloc||{}).reduce((z,v)=>z+split(v,r.it.months,r.p.i),0):0),0)),fin:rows.length>0&&!un.length,last:rows.filter(r=>r.p.paid&&r.p.on).map(r=>r.p.on).sort().pop()||""}}
 const card=(k,v,c)=>`<div class="stat${c?" c":""}"${c?` onclick="togSum()"`:""}><small>${k}</small><b>${v}</b></div>`;
 function home(){cur=null;stack=[];const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
  const eo=r2(E.reduce((q,x)=>q+x.s.out,0)),io=r2(I.reduce((q,x)=>q+x.s.out,0)),net=r2(io-eo),od=E.reduce((q,x)=>q+x.s.od,0),nx=E.map(x=>x.s.next).filter(Boolean).sort()[0];
@@ -71,39 +84,84 @@ function home(){cur=null;stack=[];const S=accts.map(a=>({a,s:asum(a)})),E=S.filt
   <div class="bar"><i style="width:${s.pct}%"></i></div><div class="small">${a.items.length?`${T[side].bal} <b>PHP ${fmt(s.out)}</b> · ${s.left} ${side==="inc"?"receipt":"payment"}${s.left===1?"":"s"} left${s.next?` · next ${pd(s.next)}`:""}`:"No items yet"}</div></div>`).join(""):`<p class="empty">Nothing yet. Create one above.</p>`}</section>`;
  const setup=side=>`<section><h2>${T[side].ttl}</h2><div class="grid"><div><label>Name</label><input id="nm-${side}"></div><div><label>Type</label><select id="kd-${side}">${T[side].kinds.map(k=>`<option>${k}</option>`).join("")}</select></div></div><div style="margin-top:12px"><button onclick="addAcct('${side}')">Create</button></div></section>`;
  $("#app").innerHTML=`<section><h2>Overview</h2><div class="stats">${card("Expenses balance left","PHP "+fmt(eo),1)}${card("Income left to receive","PHP "+fmt(io),1)}${card("Net (income minus expenses)",`<span class="${net<0?"od":""}">PHP ${fmt(net)}</span>`,1)}${card("Next due",nx?pd(nx):"–",1)}${card("Overdue payments",`<span class="${od?"od":""}">${od}</span>`,1)}</div>
-  <p class="small">Tap any card ${showSum?"to hide":"to see"} the summary per account.</p>${showSum?`<h3 style="margin:10px 0 4px">Expense accounts</h3>${sum(E)}<h3 style="margin:14px 0 4px">Income accounts</h3>${sum(I)}`:""}</section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}`}
+  <p class="small">Tap any card ${showSum?"to hide":"to see"} the summary per account.</p>${showSum?`<h3 style="margin:10px 0 4px">Expense accounts</h3>${sum(E)}<h3 style="margin:14px 0 4px">Income accounts</h3>${sum(I)}`:""}</section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}${rcpt(accts,"All accounts")}`}
 function togSum(){showSum=!showSum;home()}
 function addAcct(side){const n=$("#nm-"+side).value.trim();if(!n)return toast("Add a name.");const a={id:uid(),name:n,kind:$("#kd-"+side).value,side,items:[]};accts.push(a);save();openA(a.id)}
 function delA(id){if(!confirm("Delete this and all its items?"))return;accts=accts.filter(x=>x.id!==id);save();home()}
-function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();if(cur!==id)stack=[];cur=id;const s=asum(a),L=T[sd(a)];
+function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();if(cur!==id){stack=[];sel=new Set();cust={}}cur=id;const s=asum(a),L=T[sd(a)];
  $("#app").innerHTML=`<section><div class="row sp"><div><h2>${esc(a.name)}</h2><span class="tag">${esc(a.kind)}</span> ${s.fin?`<span class="tag ok">${L.set}${s.last?" on "+pd(s.last):""}</span>`:""}</div><button class="ghost" onclick="home()">All</button></div>
-  <div class="bar"><i style="width:${s.pct}%"></i></div><div class="stats" style="margin-top:10px">${card(L.bal,"PHP "+fmt(s.out))}${card(L.done,"PHP "+fmt(s.paidAmt))}${card(L.left,s.left)}${card(L.nx,s.next?pd(s.next):"–")}${card(L.od,`<span class="${s.od?"od":""}">${s.od}</span>`)}${card("Longest tenure left",ym(s.ten))}</div></section>
+  <div class="bar"><i style="width:${s.pct}%"></i></div><div class="stats" style="margin-top:10px">${card(L.bal,"PHP "+fmt(s.out))}${card(L.done,"PHP "+fmt(s.paidAmt))}${card(L.left,s.left)}${card(L.nx,s.next?pd(s.next):"–")}${card(L.od,`<span class="${s.od?"od":""}">${s.od}</span>`)}${card("Longest tenure left",ym(s.ten))}${s.oo>0?card("Others' share left","PHP "+fmt(s.oo)):""}</div></section>
  <section><h2>${L.add}</h2><p class="small">Set the date, stack as many items as fall on it, then add them all at once.</p>
   <div class="grid"><div><label>${L.dl}</label><input id="du" type="date" value="${today()}"></div></div>
   <div class="grid" style="margin-top:10px"><div style="grid-column:span 2"><label>Item</label><input id="ds"></div>
-  <div><label>Amount (PHP)</label><input id="am" type="number" step="any" inputmode="decimal"></div>
+  <div><label>Amount (PHP)</label><input id="am" type="number" step="any" inputmode="decimal" oninput="rem()"></div>
   <div><label>Payment</label><select id="pk" onchange="$('#mw').style.display=this.value==='i'?'':'none'"><option value="o">One-time</option><option value="i">${L.rec}</option></select></div>
   <div id="mw" style="display:none"><label>Months</label><input id="mo" type="number" inputmode="numeric" value="12"></div>
+  ${sd(a)==="exp"?`<div><label>Whose expense?</label><select id="wh" onchange="paintWho()"><option value="m">Mine</option><option value="o">Others</option></select></div>`:""}<div id="who" style="grid-column:1/-1"></div>
   <div style="grid-column:1/-1"><label>Notes or remarks (optional)</label><input id="nt"></div></div>
   <div style="margin-top:10px"><button class="ghost" onclick="stage()">+ Add to stack</button></div><div id="stk"></div></section>
- <section><h2>${L.sec}</h2><p class="small">Tick a line once ${sd(a)==="inc"?"received":"paid"}. The date is set to today and can be changed.</p>${ledger(a)}</section>`;paint()}
+ <section><h2>${L.sec}</h2><p class="small">Tick a line once ${sd(a)==="inc"?"received":"paid"}. The date is set to today and can be changed.</p>${ledger(a)}</section>${rcpt([a],a.name)}`;paint();paintWho()}
+function mkAlloc(am){const w=$("#wh");if(!w||w.value!=="o")return{who:"me",alloc:{}};
+ const P=plist(),names=[...sel].filter(n=>P.includes(n));if(!names.length)throw"Pick at least one person.";const al={};
+ if(spMode==="e"){const n=names.length+(incMe?1:0),b=r2(am/n);names.forEach(x=>al[x]=b);if(!incMe)al[names[names.length-1]]=r2(am-b*(names.length-1))}
+ else{names.forEach(x=>{const v=r2(+cust[x]||0);if(v>0)al[x]=v});const t=r2(Object.values(al).reduce((q,v)=>q+v,0));if(!t)throw"Enter an amount for at least one person.";if(t>am+0.005)throw"The amounts add up to more than the item amount."}
+ return{who:"others",alloc:al}}
 function stage(){const d=$("#ds").value.trim(),m=$("#pk").value==="i"?Math.round(+$("#mo").value):1,am=+$("#am").value;
  if(!d||!(am>0)||!(m>=1&&m<=600))return toast("Add an item name, an amount and the months if it repeats.");
- stack.push({id:uid(),desc:d,amount:am,months:m,note:$("#nt").value.trim()});$("#ds").value="";$("#am").value="";$("#nt").value="";paint();$("#ds").focus()}
-function paint(){const el=$("#stk");if(!el)return;el.innerHTML=stack.length?`<div class="stk"><b>Stack</b>${stack.map((x,i)=>`<div class="row sp"><span>${esc(x.desc)} <span class="small">${x.months>1?x.months+" months · PHP "+fmt(x.amount/x.months)+"/mo":"one-time"}${x.note?" · "+esc(x.note):""}</span></span><span>PHP ${fmt(x.amount)} <button class="x" onclick="unstage(${i})" aria-label="Remove">✕</button></span></div>`).join("")}
+ let w;try{w=mkAlloc(am)}catch(e){return toast(typeof e==="string"?e:"Check the split.")}
+ stack.push({id:uid(),desc:d,amount:am,months:m,note:$("#nt").value.trim(),...w});$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};paint();paintWho();$("#ds").focus()}
+function selP(i,on){const n=plist()[i];on?sel.add(n):sel.delete(n);paintWho()}
+function addP(){const el=$("#np"),n=el.value.trim().slice(0,60);if(!n)return;if(plist().some(x=>x.toLowerCase()===n.toLowerCase()))return toast("That name is already in the list.");people.push(n);sel.add(n);savePpl();paintWho()}
+function rmP(i){const n=plist()[i];people=people.filter(x=>x!==n);sel.delete(n);savePpl();paintWho()}
+function rem(){const el=$("#rm");if(!el)return;const am=+$("#am").value||0,t=r2([...sel].reduce((q,n)=>q+(+cust[n]||0),0));el.className="small"+(am&&t>am?" od":"");el.textContent="Allocated PHP "+fmt(t)+(am?" · Mine (remainder) PHP "+fmt(am-t):"")}
+function paintWho(){const el=$("#who"),w=$("#wh");if(!el)return;if(!w||w.value!=="o"){el.innerHTML="";return}
+ const P=plist(),used=new Set(accts.flatMap(a=>a.items.flatMap(i=>Object.keys(i.alloc||{}))));
+ el.innerHTML=`<div>${P.map((n,i)=>`<span><label class="chip"><input type="checkbox" ${sel.has(n)?"checked":""} onchange="selP(${i},this.checked)">${esc(n)}</label>${used.has(n)?"":`<button class="x" onclick="rmP(${i})" aria-label="Remove ${esc(n)}">✕</button>`}</span>`).join("")||`<span class="small">No people yet. Add one below.</span>`}</div>
+ <div class="row" style="margin:4px 0 8px"><input id="np" style="max-width:200px" onkeydown="if(event.key==='Enter')addP()" aria-label="New person's name"><button class="ghost" onclick="addP()">+ Add person</button></div>
+ <div class="grid"><div><label>Split</label><select onchange="spMode=this.value;paintWho()"><option value="e" ${spMode==="e"?"selected":""}>Divide equally</option><option value="c" ${spMode==="c"?"selected":""}>Custom amounts</option></select></div></div>
+ ${spMode==="e"?`<label style="margin-top:8px"><input type="checkbox" style="width:auto" ${incMe?"checked":""} onchange="incMe=this.checked"> Include me in the split</label>`:`<div style="margin-top:8px">${[...sel].map(n=>`<div class="row" style="margin-bottom:6px"><span style="min-width:110px">${esc(n)}</span><input type="number" step="any" style="max-width:150px" value="${esc(cust[n]??"")}" oninput="cust[plist()[${P.indexOf(n)}]]=this.value;rem()" aria-label="Amount for ${esc(n)}"></div>`).join("")||`<span class="small">Select people above.</span>`}<div class="small" id="rm"></div></div>`}`;rem()}
+function paint(){const el=$("#stk");if(!el)return;el.innerHTML=stack.length?`<div class="stk"><b>Stack</b>${stack.map((x,i)=>`<div class="row sp"><span>${esc(x.desc)} <span class="small">${x.months>1?x.months+" months · PHP "+fmt(x.amount/x.months)+"/mo":"one-time"}${x.who==="others"?" · for "+Object.entries(x.alloc).map(([n,v])=>esc(n)+" "+fmt(v)).join(", "):""}${x.note?" · "+esc(x.note):""}</span></span><span>PHP ${fmt(x.amount)} <button class="x" onclick="unstage(${i})" aria-label="Remove">✕</button></span></div>`).join("")}
  <div class="row sp" style="margin-top:6px"><b>Together on first date: PHP ${fmt(stack.reduce((s,x)=>s+x.amount/x.months,0))}</b><button onclick="commit()">Add all</button></div></div>`:""}
 function unstage(i){stack.splice(i,1);paint()}
 function commit(){if($("#ds").value.trim()&&+$("#am").value>0)stage();const du=$("#du").value,a=accts.find(x=>x.id===cur);
  if(!du)return toast("Set the date.");if(!stack.length)return toast("Stack at least one item first.");
  stack.forEach(x=>a.items.push({...x,due:du,paid:[],paidOn:[]}));const n=stack.length;stack=[];save();openA(cur);toast(n+" item"+(n===1?"":"s")+" added")}
+const fl=r=>{const it=r.it;if(it.who!=="others")return"";const e=Object.entries(it.alloc||{}).map(([n,v])=>[n,split(v,it.months,r.p.i)]),m=r2(r.p.amt-e.reduce((q,x)=>q+x[1],0));return`<div class="nt">For ${e.map(([n,v])=>esc(n)+" "+fmt(v)).join(", ")}${m>0.004?" · Me "+fmt(m):""}</div>`};
+function slip(name,list,title){const rows=[];let tot=0,set=0;
+ list.forEach(a=>asum(a).rows.forEach(r=>{const v=r.it.who==="others"&&r.it.alloc&&r.it.alloc[name];if(!(v>0))return;const x=split(v,r.it.months,r.p.i);tot+=x;if(r.p.paid)set+=x;rows.push({a,r,x})}));
+ rows.sort((p,q)=>p.r.p.date>q.r.p.date?1:-1);tot=r2(tot);set=r2(set);
+ return`<div class="slip" data-n="${esc(name)}"><h3>Receipt</h3><div class="c">${esc(title)}</div><div class="nm">${esc(name)}</div><hr>${rows.map(({a,r,x})=>`<div class="ln${r.p.paid?" paid":""}"><span>${pd(r.p.date)} · ${esc(r.it.desc)}${r.it.months>1?" "+(r.p.i+1)+"/"+r.it.months:""}</span><span>${fmt(x)}</span></div>${list.length>1?`<div class="ln sub"><span>${esc(a.name)}</span></div>`:""}${r.p.paid&&r.p.on?`<div class="ln sub"><span>Settled ${pd(r.p.on)}</span></div>`:""}`).join("")||`<div class="c">Nothing allocated</div>`}<hr><div class="ln"><span>TOTAL</span><span>PHP ${fmt(tot)}</span></div><div class="ln"><span>SETTLED</span><span>PHP ${fmt(set)}</span></div><div class="ln tot"><span>BALANCE</span><span>PHP ${fmt(r2(tot-set))}</span></div><div class="c" style="font-size:11px;margin-top:6px">Struck-through lines are already settled</div><hr><div class="c">Thank you!</div></div>`}
+function rcpt(list,title){const names=[...new Set(list.flatMap(a=>a.items.flatMap(i=>i.who==="others"?Object.keys(i.alloc||{}):[])))];if(!names.length)return"";
+ return`<section><h2>Receipts per person</h2><div class="row" style="margin-bottom:12px"><button onclick="dlSlip(0,1)">Download all as images</button><button class="ghost" onclick="print()">Print / save as PDF</button></div><div id="slips" class="sg">${names.map((n,k)=>`<div class="sw">${slip(n,list,title)}<div class="noprint" style="margin-top:8px"><button class="ghost" onclick="dlSlip(${k})">Download ${esc(n)}'s receipt</button></div></div>`).join("")}</div></section>`}
+async function dlSlip(k,all){const nd=[...document.querySelectorAll("#slips .slip")],L=all?nd:[nd[k]];if(!L[0])return toast("Nothing to download.");if(!window.html2canvas)return toast("The image tool did not load. Use Print / save as PDF instead.");
+ for(const n of L){const cv=await html2canvas(n,{backgroundColor:"#ffffff",scale:2}),a=document.createElement("a");a.download="receipt-"+n.dataset.n.replace(/[^\w]+/g,"-")+".png";a.href=cv.toDataURL("image/png");a.click()}}
 function ledger(a){const g={};asum(a).rows.forEach(r=>(g[r.p.date]=g[r.p.date]||[]).push(r));const ds=Object.keys(g).sort(),t=today();
  if(!ds.length)return`<p class="empty">No items yet.</p>`;
  return`<div class="wrap"><table>`+ds.map(d=>{const un=g[d].filter(r=>!r.p.paid),tt=r2(un.reduce((s,r)=>s+r.p.amt,0));
-  return`<tr class="gh"><td colspan="5">${pd(d)}${un.length&&d<t?" · overdue":""} · ${un.length?"PHP "+fmt(tt)+" "+T[sd(a)].due:"all settled"}</td></tr>`+g[d].map(r=>`<tr class="${r.p.paid?"paid":""}"><td><input type="checkbox" ${r.p.paid?"checked":""} onchange="tog('${r.it.id}',${r.p.i})" aria-label="Settled"></td><td>${esc(r.it.desc)}${r.it.note?`<div class="nt">${esc(r.it.note)}</div>`:""}</td><td class="small">${r.it.months>1?(r.p.i+1)+" of "+r.it.months:"one-time"}</td><td>${r.p.paid?`<input type="date" class="dt" value="${esc(r.p.on)}" onchange="setOn('${r.it.id}',${r.p.i},this.value)" aria-label="Settlement date">`:""}</td><td class="n">${fmt(r.p.amt)} <button class="x" onclick="delI('${r.it.id}')" aria-label="Delete item">✕</button></td></tr>`).join("")}).join("")+`</table></div>`}
+  return`<tr class="gh"><td colspan="5">${pd(d)}${un.length&&d<t?" · overdue":""} · ${un.length?"PHP "+fmt(tt)+" "+T[sd(a)].due:"all settled"}</td></tr>`+g[d].map(r=>`<tr class="${r.p.paid?"paid":""}"><td><input type="checkbox" ${r.p.paid?"checked":""} onchange="tog('${r.it.id}',${r.p.i})" aria-label="Settled"></td><td>${esc(r.it.desc)}${r.it.note?`<div class="nt">${esc(r.it.note)}</div>`:""}${fl(r)}</td><td class="small">${r.it.months>1?(r.p.i+1)+" of "+r.it.months:"one-time"}</td><td>${r.p.paid?`<input type="date" class="dt" value="${esc(r.p.on)}" onchange="setOn('${r.it.id}',${r.p.i},this.value)" aria-label="Settlement date">`:""}</td><td class="n">${fmt(r.p.amt)} <button class="x" onclick="delI('${r.it.id}')" aria-label="Delete item">✕</button></td></tr>`).join("")}).join("")+`</table></div>`}
 function it_(iid){const a=accts.find(x=>x.id===cur),it=a.items.find(x=>x.id===iid);it.paidOn=it.paidOn||[];return it}
 function tog(iid,i){const it=it_(iid);it.paid[i]=!it.paid[i];if(it.paid[i])it.paidOn[i]=today();else delete it.paidOn[i];save();const y=scrollY;openA(cur);scrollTo(0,y)}
 function setOn(iid,i,v){it_(iid).paidOn[i]=v;save();const y=scrollY;openA(cur);scrollTo(0,y)}
 function delI(iid){const a=accts.find(x=>x.id===cur),it=a.items.find(x=>x.id===iid);if(!confirm("Delete \""+it.desc+"\" and all its payments?"))return;a.items=a.items.filter(x=>x.id!==iid);save();openA(cur)}
+function closeM(){$("#mdl").classList.remove("on")}
+function dlj(o,n){const b=new Blob([JSON.stringify(o,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast("Downloaded "+n+". Keep it somewhere safe.")}
+function exportAll(){if(!accts.length)return toast("Nothing to download yet.");dlj({app:"financial-buddy",version:2,accounts:accts,people:plist()},"FinancialBuddy-"+today().replace(/-/g,"")+".json")}
+const okd=s=>/^\d{4}-\d{2}-\d{2}$/.test(s);
+function normA(a){if(!a||typeof a.id!=="string"||!/^[\w-]{4,40}$/.test(a.id)||!a.name||!Array.isArray(a.items))throw 0;
+ return{id:a.id,name:String(a.name),kind:String(a.kind||"Other"),side:a.side==="inc"?"inc":"exp",items:a.items.map(it=>{const m=Math.round(+it.months),am=+it.amount;if(!(am>0)||!(m>=1&&m<=600)||!okd(String(it.due))||!/^[\w-]+$/.test(String(it.id)))throw 0;
+  const al={};if(it.alloc&&typeof it.alloc==="object")for(const k in it.alloc){const v=r2(+it.alloc[k]);if(v>0)al[String(k).slice(0,60)]=v}
+  const pa=it.paid||[],po=it.paidOn||[],paid=Array.from({length:m},(_,i)=>!!pa[i]),on=Array.from({length:m},(_,i)=>paid[i]&&okd(String(po[i]))?String(po[i]):"");
+  return{id:String(it.id),desc:String(it.desc||""),amount:am,months:m,due:String(it.due),note:String(it.note||""),paid,paidOn:on,who:Object.keys(al).length?"others":"me",alloc:al}})}}
+let pendA=null,pendP=[];
+function mergeA(c,n){const m=new Map(c.items.map(i=>[i.id,i]));n.items.forEach(i=>{const x=m.get(i.id);if(!x){c.items.push(i);return}
+ x.paidOn=x.paidOn||[];for(let k=0;k<x.months;k++)if(!x.paid[k]&&i.paid[k]){x.paid[k]=true;x.paidOn[k]=i.paidOn[k]||""}});return c}
+function impDialog(n){$("#mc").innerHTML=`<h2 style="margin-bottom:8px">You already have data here</h2><p>This browser has ${accts.length} account${accts.length===1?"":"s"} saved. The file has ${n}. What should happen?</p><p class="small"><b>Overwrite</b> replaces everything in this browser with the file.<br><b>Merge</b> keeps what you have and adds the accounts and items from the file that are missing. A payment counts as settled if it is settled in either one.<br><b>Cancel</b> changes nothing.</p><div class="row"><button onclick="applyImp('overwrite')">Overwrite</button><button class="ghost" onclick="applyImp('merge')">Merge</button><button class="ghost" onclick="applyImp('cancel')">Cancel</button></div>`;$("#mdl").classList.add("on")}
+function applyImp(mode){const L=pendA;pendA=null;closeM();if(mode==="cancel"||!L)return toast("Nothing was changed.");
+ if(mode==="overwrite"){accts=L;people=[...new Set(pendP)]}else{people=[...new Set([...people,...pendP])]}savePpl();if(mode==="overwrite")0;else L.forEach(a=>{const c=accts.find(x=>x.id===a.id);if(c)mergeA(c,a);else accts.push(a)});
+ save();cur=null;home();toast("Data "+(mode==="merge"?"merged":"loaded"))}
+function importFile(inp){const f=inp.files[0];inp.value="";if(!f)return;const rd=new FileReader();rd.onerror=()=>toast("Could not read that file.");
+ rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.app&&d.app!=="financial-buddy")throw 0;if(!Array.isArray(d.accounts)||!d.accounts.length)throw 0;pendA=d.accounts.map(normA);pendP=Array.isArray(d.people)?d.people.map(x=>String(x).slice(0,60)).filter(Boolean).slice(0,200):[];
+  if(accts.length)impDialog(pendA.length);else applyImp("overwrite")}catch(e){toast("That doesn't look like a Financial Buddy file.")}};rd.readAsText(f)}
 home();
 </script>
 </body></html>
