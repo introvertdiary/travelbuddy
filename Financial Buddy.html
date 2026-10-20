@@ -37,7 +37,7 @@ tr.next td{background:var(--lilac)}.od{color:var(--bad);font-weight:700}
 .gh td{background:var(--lilac);color:var(--deep);font-weight:700;border-bottom:0}
 .stk{border:1.5px dashed var(--orchid);border-radius:12px;padding:8px 12px;margin-top:12px}.stk .row{padding:3px 0}
 .stat.c{cursor:pointer}.dt{width:auto;padding:3px 6px;font-size:12px}td .nt{white-space:normal;min-width:130px;color:var(--mute);font-size:12px}
-.mdl{position:fixed;inset:0;background:#0a2a2c88;display:none;place-items:center;z-index:40;padding:16px}.mdl.on{display:grid}.mc{background:var(--card);border-radius:18px;padding:18px;max-width:440px;width:100%}
+.mdl{position:fixed;inset:0;background:#0a2a2c88;display:none;place-items:center;z-index:40;padding:16px}.mdl.on{display:grid}.mc{background:var(--card);border-radius:18px;padding:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto}
 .chip{display:inline-flex;gap:6px;align-items:center;background:var(--lilac);border-radius:99px;padding:4px 10px;margin:0 4px 6px 0;font-size:13px;color:var(--deep);cursor:pointer}.chip input{width:16px;height:16px}
 .sg{display:flex;flex-wrap:wrap;gap:18px}.sw{max-width:100%}
 .slip{background:#fff;width:330px;max-width:100%;padding:18px 16px;font:13px/1.45 "Courier Prime",monospace;color:#222;border:1px dashed var(--orchid);border-radius:4px}
@@ -82,6 +82,7 @@ const HERO=`<div class="hero"><h2>Where's the money going?</h2><p>Track what you
 <circle cx="300" cy="78" r="5" fill="#e9a23b"/><circle cx="470" cy="52" r="5" fill="#e9a23b"/>
 <use href="#wallet" x="8" y="78" width="38" height="38"/><use href="#coin" x="580" y="4" width="40" height="40"/></svg></div>`;
 const ini=n=>n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"$";
+let editIdx=null;
 let accts=[],stack=[],cur=null,showSum=false,people=[],sel=new Set(),cust={},spMode="e",incMe=false;
 try{people=JSON.parse(localStorage.getItem("debtbuddy:people:v1")||"[]");if(!Array.isArray(people))people=[]}catch(e){people=[]}
 function savePpl(){try{localStorage.setItem("debtbuddy:people:v1",JSON.stringify(people))}catch(e){}}
@@ -96,28 +97,34 @@ function occ(y,m,d,f,i){if(f==="w"||f==="b")return iso(new Date(y,m-1,d+(f==="w"
 const shr=(it,v,i)=>it.rec?v:split(v,it.months,i);
 const fname=it=>FQ[it.freq||"m"].n.toLowerCase();
 const lbl=(it,p)=>it.rec?"recurring · "+fname(it):it.months>1?(p.i+1)+" of "+it.months+" · "+fname(it):"one-time";
-function pays(it){const f=it.freq||"m",[y,m,d]=it.due.split("-").map(Number),po=it.paidOn||[];
+function pays(it,lm){const f=it.freq||"m",[y,m,d]=it.due.split("-").map(Number),po=it.paidOn||[];
  if(!it.rec){const n=it.months,b=r2(it.amount/n);return Array.from({length:n},(_,i)=>({i,date:occ(y,m,d,f,i),amt:i===n-1?r2(it.amount-b*(n-1)):b,paid:!!it.paid[i],on:po[i]||""}))}
- let mx=-1;it.paid.forEach((v,i)=>{if(v)mx=i});const lim=addD(today(),FQ[f].h),out=[];
+ let mx=-1;it.paid.forEach((v,i)=>{if(v)mx=i});const df=addD(today(),FQ[f].h),lim=lm&&lm>df?lm:df,out=[];
  for(let i=0;i<2000;i++){const dt=occ(y,m,d,f,i);if(it.until&&dt>it.until)break;if(dt>lim&&i>mx+1)break;out.push({i,date:dt,amt:it.amount,paid:!!it.paid[i],on:po[i]||""})}
  return out}
 function asum(a){const rows=[];let ten=0;a.items.forEach(it=>{const p=pays(it);if(!it.rec){const u=p.filter(x=>!x.paid);if(u.length){const dd=Math.round((new Date(u[u.length-1].date+"T00:00")-new Date(today()+"T00:00"))/864e5);ten=Math.max(ten,Math.max(1,Math.ceil(dd/30.4)))}}p.forEach(x=>rows.push({it,p:x}))});
  const un=rows.filter(r=>!r.p.paid),tot=r2(rows.reduce((s,r)=>s+r.p.amt,0)),out=r2(un.reduce((s,r)=>s+r.p.amt,0)),t=today();
  return{rows,tot,out,paidAmt:r2(tot-out),left:un.length,ten,od:un.filter(r=>r.p.date<t).length,next:un.map(r=>r.p.date).sort()[0],pct:tot?100*(tot-out)/tot:0,hasRec:a.items.some(i=>i.rec),oo:r2(un.reduce((q,r)=>q+(r.it.who==="others"?Object.values(r.it.alloc||{}).reduce((z,v)=>z+shr(r.it,v,r.p.i),0):0),0)),fin:rows.length>0&&!un.length,last:rows.filter(r=>r.p.paid&&r.p.on).map(r=>r.p.on).sort().pop()||""}}
-const card=(k,v,c)=>`<div class="stat${c?" c":""}"${c?` onclick="togSum()"`:""}><small>${k}</small><b>${v}</b></div>`;
-function home(){cur=null;stack=[];const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
- const eo=r2(E.reduce((q,x)=>q+x.s.out,0)),io=r2(I.reduce((q,x)=>q+x.s.out,0)),net=r2(io-eo),od=E.reduce((q,x)=>q+x.s.od,0),nx=E.map(x=>x.s.next).filter(Boolean).sort()[0];
- const sum=g=>g.length?`<div class="wrap"><table><tr><th>Account</th><th>Type</th><th class="n">Total</th><th class="n">${T[sd(g[0].a)].done.replace(" so far","")}</th><th class="n">${T[sd(g[0].a)].bal}</th><th>Next</th></tr>${g.map(({a,s})=>`<tr><td><a href="#" style="color:var(--violet)" onclick="openA('${a.id}');return false">${esc(a.name)}</a></td><td>${esc(a.kind)}</td><td class="n">${fmt(s.tot)}</td><td class="n">${fmt(s.paidAmt)}</td><td class="n">${fmt(s.out)}</td><td>${s.next?pd(s.next):"–"}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.tot,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.paidAmt,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.out,0))}</b></td><td></td></tr></table></div>`:`<p class="empty">None yet.</p>`;
+const card=(k,v,c)=>`<div class="stat${c?" c":""}"${c?` onclick="ovPop('${c}')"`:""}><small>${k}</small><b>${v}</b></div>`;
+const monthB=()=>{const [y,m]=today().split("-").map(Number);return{s:iso(new Date(y,m,1)),e:iso(new Date(y,m+1,0)),label:new Date(y,m,1).toLocaleDateString("en-GB",{month:"long",year:"numeric"})}};
+const sum=g=>g.length?`<div class="wrap"><table><tr><th>Account</th><th>Type</th><th class="n">Total</th><th class="n">${T[sd(g[0].a)].done.replace(" so far","")}</th><th class="n">${T[sd(g[0].a)].bal}</th><th>Next</th></tr>${g.map(({a,s})=>`<tr><td><a href="#" style="color:var(--violet)" onclick="openA('${a.id}');return false">${esc(a.name)}</a></td><td>${esc(a.kind)}</td><td class="n">${fmt(s.tot)}</td><td class="n">${fmt(s.paidAmt)}</td><td class="n">${fmt(s.out)}</td><td>${s.next?pd(s.next):"–"}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.tot,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.paidAmt,0))}</b></td><td class="n"><b>${fmt(g.reduce((q,x)=>q+x.s.out,0))}</b></td><td></td></tr></table></div>`:`<p class="empty">None yet.</p>`;
+function ovData(){const nb=monthB(),next=[],inst=[];accts.filter(a=>sd(a)==="exp").forEach(a=>a.items.forEach(it=>{const ps=pays(it,nb.e);ps.forEach(p=>{if(!p.paid&&p.date>=nb.s&&p.date<=nb.e)next.push({a,it,p})});if(!it.rec&&it.months>1){const u=ps.filter(p=>!p.paid);if(u.length)inst.push({a,it,u})}}));next.sort((x,y)=>x.p.date>y.p.date?1:-1);return{nb,next,inst}}
+function ovPop(k){const O=ovData();let h;
+ if(k==="next"){const t=r2(O.next.reduce((q,x)=>q+x.p.amt,0));h=`<h2>Payable in ${O.nb.label}</h2>${O.next.length?`<div class="wrap"><table><tr><th>Due</th><th>Item</th><th class="n">Amount</th></tr>${O.next.map(x=>`<tr><td>${pd(x.p.date)}</td><td>${esc(x.it.desc)}<div class="nt">${esc(x.a.name)} · ${lbl(x.it,x.p)}</div></td><td class="n">${fmt(x.p.amt)}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(t)}</b></td></tr></table></div>`:`<p class="empty">Nothing is due that month.</p>`}`}
+ else if(k==="inst"){const am=x=>r2(x.u.reduce((q,p)=>q+p.amt,0)),t=r2(O.inst.reduce((q,x)=>q+am(x),0));h=`<h2>Still on installment</h2>${O.inst.length?`<div class="wrap"><table><tr><th>Item</th><th>Left</th><th class="n">Amount left</th><th>Last payment</th></tr>${O.inst.map(x=>`<tr><td>${esc(x.it.desc)}<div class="nt">${esc(x.a.name)} · ${fname(x.it)}</div></td><td>${x.u.length} of ${x.it.months}</td><td class="n">${fmt(am(x))}</td><td>${pd(x.u[x.u.length-1].date)}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(t)}</b></td><td></td></tr></table></div>`:`<p class="empty">No installments left.</p>`}`}
+ else h=`<h2>Expenses per account</h2>${sum(accts.filter(a=>sd(a)==="exp").map(a=>({a,s:asum(a)})))}`;
+ $("#mc").innerHTML=h+`<div style="margin-top:12px"><button class="ghost" onclick="closeM()">Close</button></div>`;$("#mdl").classList.add("on")}
+function home(){cur=null;stack=[];editIdx=null;const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
+ const O=ovData(),eo=r2(E.reduce((q,x)=>q+x.s.out,0)),nt=r2(O.next.reduce((q,x)=>q+x.p.amt,0)),ins=r2(O.inst.reduce((q,x)=>q+x.u.reduce((z,p)=>z+p.amt,0),0));
  const lst=(g,side)=>`<section><h2><svg class="ic sm"><use href="#coin"/></svg> ${T[side].list}</h2>${g.length?g.map(({a,s})=>`<div class="debt"><div class="row sp"><div><b>${esc(a.name)}</b> <span class="tag">${esc(a.kind)}</span> ${s.od?`<span class="tag bad">${s.od} ${side==="inc"?"late":"overdue"}</span>`:""}${s.fin?`<span class="tag ok">${T[side].set}${s.last?" on "+pd(s.last):""}</span>`:""}</div>
   <div class="row"><button class="ghost" onclick="openA('${a.id}')">Open</button><button class="x" onclick="delA('${a.id}')">Delete</button></div></div>
   <div class="bar"><i style="width:${s.pct}%"></i></div><div class="small">${a.items.length?`${T[side].bal} <b>PHP ${fmt(s.out)}</b> · ${s.left} ${side==="inc"?"receipt":"payment"}${s.left===1?"":"s"} left${s.next?` · next ${pd(s.next)}`:""}`:"No items yet"}</div></div>`).join(""):`<p class="empty">Nothing yet. Create one above.</p>`}</section>`;
  const setup=side=>`<section><h2>${T[side].ttl}</h2><div class="grid"><div><label>Name</label><input id="nm-${side}"></div><div><label>Type</label><select id="kd-${side}">${T[side].kinds.map(k=>`<option>${k}</option>`).join("")}</select></div></div><div style="margin-top:12px"><button onclick="addAcct('${side}')">Create</button></div></section>`;
- $("#app").innerHTML=HERO+`<section><h2>Overview</h2><div class="stats">${card("Expenses balance left","PHP "+fmt(eo),1)}${card("Income left to receive","PHP "+fmt(io),1)}${card("Net (income minus expenses)",`<span class="${net<0?"od":""}">PHP ${fmt(net)}</span>`,1)}${card("Next due",nx?pd(nx):"–",1)}${card("Overdue payments",`<span class="${od?"od":""}">${od}</span>`,1)}</div>
-  <p class="small">Tap any card ${showSum?"to hide":"to see"} the summary per account.</p>${showSum?`<h3 style="margin:10px 0 4px">Expense accounts</h3>${sum(E)}<h3 style="margin:14px 0 4px">Income accounts</h3>${sum(I)}`:""}</section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}${rcpt(accts,"All accounts")}`}
-function togSum(){showSum=!showSum;home()}
+ $("#app").innerHTML=HERO+`<section><h2>Overview</h2><div class="stats">${card("Expenses balance left","PHP "+fmt(eo),"bal")}${card("Payable next month ("+O.nb.label+")","PHP "+fmt(nt),"next")}${card("Still on installment","PHP "+fmt(ins),"inst")}</div>
+  <p class="small">Tap a card to see the details.</p></section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}${rcpt(accts,"All accounts")}`}
 function addAcct(side){const n=$("#nm-"+side).value.trim();if(!n)return toast("Add a name.");const a={id:uid(),name:n,kind:$("#kd-"+side).value,side,items:[]};accts.push(a);save();openA(a.id)}
 function delA(id){if(!confirm("Delete this and all its items?"))return;accts=accts.filter(x=>x.id!==id);save();home()}
-function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();if(cur!==id){stack=[];sel=new Set();cust={}}cur=id;const s=asum(a),L=T[sd(a)];
+function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();editIdx=null;if(cur!==id){stack=[];sel=new Set();cust={}}cur=id;const s=asum(a),L=T[sd(a)];
  $("#app").innerHTML=`<section><div class="row sp"><div class="row" style="flex-wrap:nowrap"><div class="stamp">${esc(ini(a.name))}</div><div><h2>${esc(a.name)}</h2><span class="tag">${esc(a.kind)}</span> ${s.fin?`<span class="tag ok">${L.set}${s.last?" on "+pd(s.last):""}</span>`:""}</div></div><button class="ghost" onclick="home()">All</button></div>
   <div class="bar"><i style="width:${s.pct}%"></i></div><div class="stats" style="margin-top:10px">${card(L.bal,"PHP "+fmt(s.out))}${card(L.done,"PHP "+fmt(s.paidAmt))}${card(L.left,s.left)}${card(L.nx,s.next?pd(s.next):"–")}${card(L.od,`<span class="${s.od?"od":""}">${s.od}</span>`)}${card("Longest tenure left",s.ten?ym(s.ten):s.hasRec?"Ongoing":"none")}${s.oo>0?card("Others' share left","PHP "+fmt(s.oo)):""}</div></section>
  <section><h2>${L.add}</h2><p class="small">Set the date, stack as many items as fall on it, then add them all at once.</p>
@@ -130,7 +137,7 @@ function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();if(cur!=
   <div id="ew" style="display:none"><label>Ends on (optional)</label><input id="en" type="date"></div>
   ${sd(a)==="exp"?`<div><label>Whose expense?</label><select id="wh" onchange="paintWho()"><option value="m">Mine</option><option value="o">Others</option></select></div>`:""}<div id="who" style="grid-column:1/-1"></div>
   <div style="grid-column:1/-1"><label>Notes or remarks (optional)</label><input id="nt"></div></div>
-  <div style="margin-top:10px"><button class="plus" onclick="stage()">+ Add to stack</button></div><div id="stk"></div></section>
+  <div style="margin-top:10px"><button class="plus" id="sb" onclick="stage()">+ Add to stack</button> <button class="x" id="cb" style="display:none" onclick="cancelEdit()">Cancel edit</button></div><div id="stk"></div></section>
  <section><h2>${L.sec}</h2><p class="small">Tick a line once ${sd(a)==="inc"?"received":"paid"}. The date is set to today and can be changed.</p>${ledger(a)}</section>${rcpt([a],a.name)}`;paint();paintWho()}
 function mkAlloc(am){const w=$("#wh");if(!w||w.value!=="o")return{who:"me",alloc:{}};
  const P=plist(),names=[...sel].filter(n=>P.includes(n));if(!names.length)throw"Pick at least one person.";const al={};
@@ -142,7 +149,12 @@ function stage(){const d=$("#ds").value.trim(),k=$("#pk").value,m=k==="i"?Math.r
  if(!d||!(am>0)||!(m>=1&&m<=600))return toast("Add an item name, an amount and the number of payments if it is an installment.");
  if(un&&$("#du").value&&un<$("#du").value)return toast("The end date is before the first date.");
  let w;try{w=mkAlloc(am)}catch(e){return toast(typeof e==="string"?e:"Check the split.")}
- stack.push({id:uid(),desc:d,amount:am,months:m,rec:k==="r",freq:f,until:un,note:$("#nt").value.trim(),...w});$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};paint();paintWho();$("#ds").focus()}
+ const o={id:editIdx!=null?stack[editIdx].id:uid(),desc:d,amount:am,months:m,rec:k==="r",freq:f,until:un,note:$("#nt").value.trim(),...w};if(editIdx!=null){stack[editIdx]=o;editIdx=null}else stack.push(o);$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};sbUI();paint();paintWho();$("#ds").focus()}
+function sbUI(){const b=$("#sb");if(!b)return;b.textContent=editIdx!=null?"Save changes":"+ Add to stack";$("#cb").style.display=editIdx!=null?"":"none"}
+function editStk(i){const x=stack[i];editIdx=i;$("#ds").value=x.desc;$("#am").value=x.amount;$("#nt").value=x.note||"";$("#pk").value=x.rec?"r":x.months>1?"i":"o";payUI();$("#fq").value=x.freq||"m";if(x.months>1)$("#mo").value=x.months;$("#en").value=x.until||"";
+ const w=$("#wh");if(w){w.value=x.who==="others"?"o":"m";if(x.who==="others"){sel=new Set(Object.keys(x.alloc));cust={};Object.entries(x.alloc).forEach(([n,v])=>cust[n]=String(v));spMode="c"}}
+ paintWho();sbUI();paint();$("#ds").scrollIntoView({block:"center"});$("#ds").focus()}
+function cancelEdit(){editIdx=null;$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};paintWho();sbUI();paint()}
 function selP(i,on){const n=plist()[i];on?sel.add(n):sel.delete(n);paintWho()}
 function addP(){const el=$("#np"),n=el.value.trim().slice(0,60);if(!n)return;if(plist().some(x=>x.toLowerCase()===n.toLowerCase()))return toast("That name is already in the list.");people.push(n);sel.add(n);savePpl();paintWho()}
 function rmP(i){const n=plist()[i];people=people.filter(x=>x!==n);sel.delete(n);savePpl();paintWho()}
@@ -153,9 +165,9 @@ function paintWho(){const el=$("#who"),w=$("#wh");if(!el)return;if(!w||w.value!=
  <div class="row" style="margin:4px 0 8px"><input id="np" style="max-width:200px" onkeydown="if(event.key==='Enter')addP()" aria-label="New person's name"><button class="plus" onclick="addP()">+ Add person</button></div>
  <div class="grid"><div><label>Split</label><select onchange="spMode=this.value;paintWho()"><option value="e" ${spMode==="e"?"selected":""}>Divide equally</option><option value="c" ${spMode==="c"?"selected":""}>Custom amounts</option></select></div></div>
  ${spMode==="e"?`<label style="margin-top:8px"><input type="checkbox" style="width:auto" ${incMe?"checked":""} onchange="incMe=this.checked"> Include me in the split</label>`:`<div style="margin-top:8px">${[...sel].map(n=>`<div class="row" style="margin-bottom:6px"><span style="min-width:110px">${esc(n)}</span><input type="number" step="any" style="max-width:150px" value="${esc(cust[n]??"")}" oninput="cust[plist()[${P.indexOf(n)}]]=this.value;rem()" aria-label="Amount for ${esc(n)}"></div>`).join("")||`<span class="small">Select people above.</span>`}<div class="small" id="rm"></div></div>`}`;rem()}
-function paint(){const el=$("#stk");if(!el)return;el.innerHTML=stack.length?`<div class="stk"><b>Stack</b>${stack.map((x,i)=>`<div class="row sp"><span>${esc(x.desc)} <span class="small">${x.rec?fname(x)+" · PHP "+fmt(x.amount)+" each"+(x.until?" until "+pd(x.until):""):x.months>1?x.months+" payments, "+fname(x)+" · PHP "+fmt(x.amount/x.months)+" each":"one-time"}${x.who==="others"?" · for "+Object.entries(x.alloc).map(([n,v])=>esc(n)+" "+fmt(v)).join(", "):""}${x.note?" · "+esc(x.note):""}</span></span><span>PHP ${fmt(x.amount)} <button class="x" onclick="unstage(${i})" aria-label="Remove">✕</button></span></div>`).join("")}
+function paint(){const el=$("#stk");if(!el)return;el.innerHTML=stack.length?`<div class="stk"><b>Stack</b>${stack.map((x,i)=>`<div class="row sp"><span>${esc(x.desc)} <span class="small">${x.rec?fname(x)+" · PHP "+fmt(x.amount)+" each"+(x.until?" until "+pd(x.until):""):x.months>1?x.months+" payments, "+fname(x)+" · PHP "+fmt(x.amount/x.months)+" each":"one-time"}${x.who==="others"?" · for "+Object.entries(x.alloc).map(([n,v])=>esc(n)+" "+fmt(v)).join(", "):""}${x.note?" · "+esc(x.note):""}</span></span><span>PHP ${fmt(x.amount)} <button class="ghost" style="padding:2px 10px;font-size:12px" onclick="editStk(${i})">${editIdx===i?"Editing…":"Edit"}</button> <button class="x" onclick="unstage(${i})" aria-label="Remove">✕</button></span></div>`).join("")}
  <div class="row sp" style="margin-top:6px"><b>Together on first date: PHP ${fmt(stack.reduce((s,x)=>s+x.amount/x.months,0))}</b><button onclick="commit()">Add all</button></div></div>`:""}
-function unstage(i){stack.splice(i,1);paint()}
+function unstage(i){stack.splice(i,1);if(editIdx===i)editIdx=null;else if(editIdx!=null&&i<editIdx)editIdx--;sbUI();paint()}
 function commit(){if($("#ds").value.trim()&&+$("#am").value>0)stage();const du=$("#du").value,a=accts.find(x=>x.id===cur);
  if(!du)return toast("Set the date.");if(!stack.length)return toast("Stack at least one item first.");
  stack.forEach(x=>a.items.push({...x,due:du,paid:[],paidOn:[]}));const n=stack.length;stack=[];save();openA(cur);toast(n+" item"+(n===1?"":"s")+" added")}
