@@ -82,7 +82,7 @@ const HERO=`<div class="hero"><h2>Where's the money going?</h2><p>Track what you
 <circle cx="300" cy="78" r="5" fill="#e9a23b"/><circle cx="470" cy="52" r="5" fill="#e9a23b"/>
 <use href="#wallet" x="8" y="78" width="38" height="38"/><use href="#coin" x="580" y="4" width="40" height="40"/></svg></div>`;
 const ini=n=>n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"$";
-let editIdx=null;
+let editIdx=null,editIid=null;
 let accts=[],stack=[],cur=null,showSum=false,people=[],sel=new Set(),cust={},spMode="e",incMe=false;
 try{people=JSON.parse(localStorage.getItem("debtbuddy:people:v1")||"[]");if(!Array.isArray(people))people=[]}catch(e){people=[]}
 function savePpl(){try{localStorage.setItem("debtbuddy:people:v1",JSON.stringify(people))}catch(e){}}
@@ -114,7 +114,7 @@ function ovPop(k){const O=ovData();let h;
  else if(k==="inst"){const am=x=>r2(x.u.reduce((q,p)=>q+p.amt,0)),t=r2(O.inst.reduce((q,x)=>q+am(x),0));h=`<h2>Still on installment</h2>${O.inst.length?`<div class="wrap"><table><tr><th>Item</th><th>Left</th><th class="n">Amount left</th><th>Last payment</th></tr>${O.inst.map(x=>`<tr><td>${esc(x.it.desc)}<div class="nt">${esc(x.a.name)} · ${fname(x.it)}</div></td><td>${x.u.length} of ${x.it.months}</td><td class="n">${fmt(am(x))}</td><td>${pd(x.u[x.u.length-1].date)}</td></tr>`).join("")}<tr><td colspan="2"><b>Total</b></td><td class="n"><b>${fmt(t)}</b></td><td></td></tr></table></div>`:`<p class="empty">No installments left.</p>`}`}
  else h=`<h2>Expenses per account</h2>${sum(accts.filter(a=>sd(a)==="exp").map(a=>({a,s:asum(a)})))}`;
  $("#mc").innerHTML=h+`<div style="margin-top:12px"><button class="ghost" onclick="closeM()">Close</button></div>`;$("#mdl").classList.add("on")}
-function home(){cur=null;stack=[];editIdx=null;const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
+function home(){cur=null;stack=[];editIdx=null;editIid=null;const S=accts.map(a=>({a,s:asum(a)})),E=S.filter(x=>sd(x.a)==="exp"),I=S.filter(x=>sd(x.a)==="inc");
  const O=ovData(),eo=r2(E.reduce((q,x)=>q+x.s.out,0)),nt=r2(O.next.reduce((q,x)=>q+x.p.amt,0)),ins=r2(O.inst.reduce((q,x)=>q+x.u.reduce((z,p)=>z+p.amt,0),0));
  const lst=(g,side)=>`<section><h2><svg class="ic sm"><use href="#coin"/></svg> ${T[side].list}</h2>${g.length?g.map(({a,s})=>`<div class="debt"><div class="row sp"><div><b>${esc(a.name)}</b> <span class="tag">${esc(a.kind)}</span> ${s.od?`<span class="tag bad">${s.od} ${side==="inc"?"late":"overdue"}</span>`:""}${s.fin?`<span class="tag ok">${T[side].set}${s.last?" on "+pd(s.last):""}</span>`:""}</div>
   <div class="row"><button class="ghost" onclick="openA('${a.id}')">Open</button><button class="x" onclick="delA('${a.id}')">Delete</button></div></div>
@@ -124,12 +124,12 @@ function home(){cur=null;stack=[];editIdx=null;const S=accts.map(a=>({a,s:asum(a
   <p class="small">Tap a card to see the details.</p></section>${setup("exp")}${setup("inc")}${lst(E,"exp")}${lst(I,"inc")}${rcpt(accts,"All accounts")}`}
 function addAcct(side){const n=$("#nm-"+side).value.trim();if(!n)return toast("Add a name.");const a={id:uid(),name:n,kind:$("#kd-"+side).value,side,items:[]};accts.push(a);save();openA(a.id)}
 function delA(id){if(!confirm("Delete this and all its items?"))return;accts=accts.filter(x=>x.id!==id);save();home()}
-function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();editIdx=null;if(cur!==id){stack=[];sel=new Set();cust={}}cur=id;const s=asum(a),L=T[sd(a)];
+function openA(id){const a=accts.find(x=>x.id===id);if(!a)return home();editIdx=null;editIid=null;if(cur!==id){stack=[];sel=new Set();cust={}}cur=id;const s=asum(a),L=T[sd(a)];
  $("#app").innerHTML=`<section><div class="row sp"><div class="row" style="flex-wrap:nowrap"><div class="stamp">${esc(ini(a.name))}</div><div><h2>${esc(a.name)}</h2><span class="tag">${esc(a.kind)}</span> ${s.fin?`<span class="tag ok">${L.set}${s.last?" on "+pd(s.last):""}</span>`:""}</div></div><button class="ghost" onclick="home()">All</button></div>
   <div class="bar"><i style="width:${s.pct}%"></i></div><div class="stats" style="margin-top:10px">${card(L.bal,"PHP "+fmt(s.out))}${card(L.done,"PHP "+fmt(s.paidAmt))}${card(L.left,s.left)}${card(L.nx,s.next?pd(s.next):"–")}${card(L.od,`<span class="${s.od?"od":""}">${s.od}</span>`)}${card("Longest tenure left",s.ten?ym(s.ten):s.hasRec?"Ongoing":"none")}${s.oo>0?card("Others' share left","PHP "+fmt(s.oo)):""}</div></section>
  <section><h2>${L.add}</h2><p class="small">Set the date, stack as many items as fall on it, then add them all at once.</p>
   <div class="grid"><div><label>${L.dl}</label><input id="du" type="date" value="${today()}"></div></div>
-  <div class="grid" style="margin-top:10px"><div style="grid-column:span 2"><label>Item</label><input id="ds"></div>
+  <div id="eb"></div><div class="grid" style="margin-top:10px"><div style="grid-column:span 2"><label>Item</label><input id="ds"></div>
   <div><label id="al">Amount (PHP)</label><input id="am" type="number" step="any" inputmode="decimal" oninput="rem()"></div>
   <div><label>Payment</label><select id="pk" onchange="payUI()"><option value="o">One-time</option><option value="i">Installment (set number of payments)</option><option value="r">Recurring (repeats until stopped)</option></select></div>
   <div id="fw" style="display:none"><label>Repeats</label><select id="fq">${Object.entries(FQ).map(([k,v])=>`<option value="${k}"${k==="m"?" selected":""}>${v.n}</option>`).join("")}</select></div>
@@ -150,10 +150,21 @@ function stage(){const d=$("#ds").value.trim(),k=$("#pk").value,m=k==="i"?Math.r
  if(un&&$("#du").value&&un<$("#du").value)return toast("The end date is before the first date.");
  let w;try{w=mkAlloc(am)}catch(e){return toast(typeof e==="string"?e:"Check the split.")}
  const o={id:editIdx!=null?stack[editIdx].id:uid(),desc:d,amount:am,months:m,rec:k==="r",freq:f,until:un,note:$("#nt").value.trim(),...w};if(editIdx!=null){stack[editIdx]=o;editIdx=null}else stack.push(o);$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};sbUI();paint();paintWho();$("#ds").focus()}
-function sbUI(){const b=$("#sb");if(!b)return;b.textContent=editIdx!=null?"Save changes":"+ Add to stack";$("#cb").style.display=editIdx!=null?"":"none"}
-function editStk(i){const x=stack[i];editIdx=i;$("#ds").value=x.desc;$("#am").value=x.amount;$("#nt").value=x.note||"";$("#pk").value=x.rec?"r":x.months>1?"i":"o";payUI();$("#fq").value=x.freq||"m";if(x.months>1)$("#mo").value=x.months;$("#en").value=x.until||"";
- const w=$("#wh");if(w){w.value=x.who==="others"?"o":"m";if(x.who==="others"){sel=new Set(Object.keys(x.alloc));cust={};Object.entries(x.alloc).forEach(([n,v])=>cust[n]=String(v));spMode="c"}}
- paintWho();sbUI();paint();$("#ds").scrollIntoView({block:"center"});$("#ds").focus()}
+function sbUI(){const b=$("#sb");if(!b)return;const sv=editIid!=null;b.style.display=sv?"none":"";b.textContent=editIdx!=null?"Save changes":"+ Add to stack";$("#cb").style.display=!sv&&editIdx!=null?"":"none"}
+function fillForm(x){$("#ds").value=x.desc;$("#am").value=x.amount;$("#nt").value=x.note||"";$("#pk").value=x.rec?"r":x.months>1?"i":"o";payUI();$("#fq").value=x.freq||"m";if(x.months>1)$("#mo").value=x.months;$("#en").value=x.until||"";
+ const w=$("#wh");if(w){w.value=x.who==="others"?"o":"m";if(x.who==="others"){sel=new Set(Object.keys(x.alloc));cust={};Object.entries(x.alloc).forEach(([n,v])=>cust[n]=String(v));spMode="c"}}paintWho()}
+function editStk(i){editIid=null;$("#eb").innerHTML="";editIdx=i;fillForm(stack[i]);sbUI();paint();$("#ds").scrollIntoView({block:"center"});$("#ds").focus()}
+function editSaved(iid){const a=accts.find(x=>x.id===cur),it=a&&a.items.find(x=>x.id===iid);if(!it)return;editIdx=null;editIid=iid;fillForm(it);$("#du").value=it.due;
+ $("#eb").innerHTML=`<div class="stk" style="margin:0 0 10px"><b>Editing saved item: ${esc(it.desc)}</b><div class="small">Payments you already ticked stay ticked. Change the fields below, then save.</div><div class="row" style="margin-top:6px"><button onclick="saveSaved()">Save changes</button><button class="x" onclick="cancelSaved()">Cancel</button></div></div>`;sbUI();paint();$("#eb").scrollIntoView({block:"center"})}
+function cancelSaved(){editIid=null;$("#eb").innerHTML="";$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};paintWho();sbUI()}
+function saveSaved(){const a=accts.find(x=>x.id===cur),it=a&&a.items.find(x=>x.id===editIid);if(!it)return;
+ const d=$("#ds").value.trim(),k=$("#pk").value,m=k==="i"?Math.round(+$("#mo").value):1,am=+$("#am").value,f=k==="o"?"m":$("#fq").value,un=k==="r"?$("#en").value:"",du=$("#du").value;
+ if(!d||!(am>0)||!(m>=1&&m<=600)||!du)return toast("Add an item name, an amount, the date and the number of payments if it is an installment.");
+ if(un&&un<du)return toast("The end date is before the first date.");
+ let w;try{w=mkAlloc(am)}catch(e){return toast(typeof e==="string"?e:"Check the split.")}
+ Object.assign(it,{desc:d,amount:am,months:m,rec:k==="r",freq:f,until:un,note:$("#nt").value.trim(),due:du,...w});
+ if(k!=="r"){it.paid=it.paid.slice(0,m);it.paidOn=(it.paidOn||[]).slice(0,m)}
+ save();editIid=null;openA(cur);toast("Changes saved")}
 function cancelEdit(){editIdx=null;$("#ds").value="";$("#am").value="";$("#nt").value="";cust={};paintWho();sbUI();paint()}
 function selP(i,on){const n=plist()[i];on?sel.add(n):sel.delete(n);paintWho()}
 function addP(){const el=$("#np"),n=el.value.trim().slice(0,60);if(!n)return;if(plist().some(x=>x.toLowerCase()===n.toLowerCase()))return toast("That name is already in the list.");people.push(n);sel.add(n);savePpl();paintWho()}
@@ -183,7 +194,7 @@ async function dlSlip(k,all){const nd=[...document.querySelectorAll("#slips .sli
 function ledger(a){const g={};asum(a).rows.forEach(r=>(g[r.p.date]=g[r.p.date]||[]).push(r));const ds=Object.keys(g).sort(),t=today();
  if(!ds.length)return`<p class="empty">No items yet.</p>`;
  return`<div class="wrap"><table>`+ds.map(d=>{const un=g[d].filter(r=>!r.p.paid),tt=r2(un.reduce((s,r)=>s+r.p.amt,0));
-  return`<tr class="gh"><td colspan="5">${pd(d)}${un.length&&d<t?" · overdue":""} · ${un.length?"PHP "+fmt(tt)+" "+T[sd(a)].due:"all settled"}</td></tr>`+g[d].map(r=>`<tr class="${r.p.paid?"paid":""}"><td><input type="checkbox" ${r.p.paid?"checked":""} onchange="tog('${r.it.id}',${r.p.i})" aria-label="Settled"></td><td>${esc(r.it.desc)}${r.it.note?`<div class="nt">${esc(r.it.note)}</div>`:""}${fl(r)}</td><td class="small">${lbl(r.it,r.p)}</td><td>${r.p.paid?`<input type="date" class="dt" value="${esc(r.p.on)}" onchange="setOn('${r.it.id}',${r.p.i},this.value)" aria-label="Settlement date">`:""}</td><td class="n">${fmt(r.p.amt)} <button class="x" onclick="delI('${r.it.id}')" aria-label="Delete item">✕</button></td></tr>`).join("")}).join("")+`</table></div>`}
+  return`<tr class="gh"><td colspan="5">${pd(d)}${un.length&&d<t?" · overdue":""} · ${un.length?"PHP "+fmt(tt)+" "+T[sd(a)].due:"all settled"}</td></tr>`+g[d].map(r=>`<tr class="${r.p.paid?"paid":""}"><td><input type="checkbox" ${r.p.paid?"checked":""} onchange="tog('${r.it.id}',${r.p.i})" aria-label="Settled"></td><td>${esc(r.it.desc)}${r.it.note?`<div class="nt">${esc(r.it.note)}</div>`:""}${fl(r)}</td><td class="small">${lbl(r.it,r.p)}</td><td>${r.p.paid?`<input type="date" class="dt" value="${esc(r.p.on)}" onchange="setOn('${r.it.id}',${r.p.i},this.value)" aria-label="Settlement date">`:""}</td><td class="n">${fmt(r.p.amt)} <button class="ghost" style="padding:2px 8px;font-size:12px" onclick="editSaved('${r.it.id}')">Edit</button> <button class="x" onclick="delI('${r.it.id}')" aria-label="Delete item">✕</button></td></tr>`).join("")}).join("")+`</table></div>`}
 function it_(iid){const a=accts.find(x=>x.id===cur),it=a.items.find(x=>x.id===iid);it.paidOn=it.paidOn||[];return it}
 function tog(iid,i){const it=it_(iid);it.paid[i]=!it.paid[i];if(it.paid[i])it.paidOn[i]=today();else delete it.paidOn[i];save();const y=scrollY;openA(cur);scrollTo(0,y)}
 function setOn(iid,i,v){it_(iid).paidOn[i]=v;save();const y=scrollY;openA(cur);scrollTo(0,y)}
